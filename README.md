@@ -10,42 +10,48 @@ forecast explainable.
 
 ## Method at a glance
 
-```mermaid
-flowchart TB
-    RAW["Raw transactions<br/>amount · date · MCC · description"]
-
-    subgraph S1["1 · Feature creation"]
-        direction TB
-        TAG["Tag subscription payments<br/>(cloud, gym, insurance, ...)"]
-        STR["Detect recurring streams<br/>(same amount, ~monthly)"]
-        subgraph FB["103 features in 5 blocks"]
-            direction LR
-            F1["Subscription status<br/>& timing"]
-            F2["Habits<br/>(recent payments)"]
-            F3["Subscription<br/>history"]
-            F4["Portfolio changes<br/>& refunds"]
-            F5["Account behaviour<br/>& travel"]
-        end
-        TAG --> STR --> FB
-    end
-
-    subgraph S2["2 · One sparse L1 logistic regression per label (in parallel)"]
-        direction LR
-        M1["cloud?"]
-        M2["gym?"]
-        M3["insurance?"]
-        M4["mobile?"]
-        M5["music?"]
-        M6["software?"]
-        M7["streaming?"]
-        M8["none?"]
-    end
-
-    DEC["3 · Pick the label with the highest probability"]
-
-    RAW --> TAG
-    FB --> M1 & M2 & M3 & M4 & M5 & M6 & M7 & M8
-    M1 & M2 & M3 & M4 & M5 & M6 & M7 & M8 --> DEC
+```
+                     ┌──────────────────────────────────────┐
+                     │           Raw transactions           │
+                     │  amount · date · MCC · description   │
+                     └──────────────────┬───────────────────┘
+                                        │
+  ══════════════════════ 1 · FEATURE CREATION ══════════════════════
+                                        │
+                     ┌──────────────────▼───────────────────┐
+                     │      Tag subscription payments       │
+                     │  (cloud, gym, insurance, mobile …)   │
+                     └──────────────────┬───────────────────┘
+                     ┌──────────────────▼───────────────────┐
+                     │       Detect recurring streams       │
+                     │    (same amount, roughly monthly)    │
+                     └──────────────────┬───────────────────┘
+                                        │
+      ┌─────────────┬─────────────┬─────┴───────┬─────────────┐
+      ▼             ▼             ▼             ▼             ▼
+ ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
+ │ Status  │   │ Habits  │   │ History │   │Portfolio│   │ Account │
+ │& timing │   │ recent  │   │  age,   │   │ changes │   │behaviour│
+ │live? due│   │payments │   │ charges │   │& refunds│   │& travel │
+ └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘
+      └─────────────┴─────────────┼─────────────┴─────────────┘
+                                  ▼
+                       103 features per client
+                                  │
+  ════════════ 2 · ONE L1 LOGISTIC REGRESSION PER LABEL ════════════
+                                  │
+   ┌───────┬───────┬───────┬──────┴┬───────┬───────┬───────┐
+   ▼       ▼       ▼       ▼       ▼       ▼       ▼       ▼
+┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐
+│cloud│ │ gym │ │insur│ │mobil│ │music│ │softw│ │strea│ │none │
+│  ?  │ │  ?  │ │  ?  │ │  ?  │ │  ?  │ │  ?  │ │  ?  │ │  ?  │
+└──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘
+ p=.12   p=.61   p=.08   p=.05   p=.03   p=.04   p=.02   p=.21
+   └───────┴───────┴───────┴───┬───┴───────┴───────┴───────┘
+                               ▼
+  ══════════════════════ 3 · DECISION ══════════════════════
+                               ▼
+                Highest probability wins → "gym"
 ```
 
 ### 1 · Feature creation
