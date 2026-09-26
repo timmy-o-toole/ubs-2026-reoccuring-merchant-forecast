@@ -25,7 +25,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from src.category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
+from features.category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
 
 MIN_GAP_DAYS = 20
 MAX_GAP_DAYS = 45
@@ -42,17 +42,20 @@ AMOUNT_REL_TOL = 0.03
 AMOUNT_ABS_TOL = 0.3
 
 
+def tag_transactions(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy of df with a 'category' column: target family or None (from mcc + description)."""
+    return df.assign(category=[classify(mcc, desc) for mcc, desc in zip(df["mcc"], df["description"])])
+
+
 def load_transactions(path: str) -> pd.DataFrame:
+    """Read a jsonl transactions file, parse timestamps and tag categories."""
     records = []
     with open(path) as f:
         for line in f:
             records.append(json.loads(line))
     df = pd.DataFrame.from_records(records)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df["category"] = [
-        classify(mcc, desc) for mcc, desc in zip(df["mcc"], df["description"])
-    ]
-    return df
+    return tag_transactions(df)
 
 
 def _cluster_by_amount(group: pd.DataFrame) -> list[pd.DataFrame]:

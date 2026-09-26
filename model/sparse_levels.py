@@ -1,6 +1,6 @@
-"""One sparse logistic regression per level: an easy, explainable classifier.
+"""Sparse per-label logistic regression: one L1 (lasso) logistic regression per level.
 
-    from sparse_levels import fit_sparse_levels
+    from model import fit_sparse_levels      # or copy this file and: from sparse_levels import ...
 
     model = fit_sparse_levels(X, y)          # X: feature table, y: a level per row
     model.predict(X_new)                     # predicted level per row

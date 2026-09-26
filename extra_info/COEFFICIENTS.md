@@ -1,10 +1,10 @@
-# Final Model: Individual Coefficients
+# Individual Coefficients of the Sparse Per-Label Logistic Regression
 
-> **Note:** the numbers here come from the sparse per-label model on the `lean` set trained on train only (valid macro-F1 0.504). The final model additionally uses 3,152 pseudo-labelled clients (0.513); the direction of every effect is unchanged.
+> **Note:** these numbers come from the train-only version of the model (lean set, 103 features; valid macro-F1 0.504). The final model additionally trains on 3,152 pseudo-labelled clients (valid 0.513) and keeps more features per label (59-96 instead of 23-80); the direction of every effect is unchanged.
 
-Final model: **sparse per-label logistic regression**, `lean` feature set (103 features), fit on train. Valid macro-F1 **0.5036**.
+Model: **sparse per-label logistic regression (L1 / lasso)**, `lean` feature set (103 features), train-only version. Valid macro-F1 **0.504**.
 
-How to read: *odds ×k per SD* = one standard deviation more of the feature multiplies the odds of that label (vs all other labels) by k, holding the other features fixed. **Stable** = selected in ≥ 80% of 20 bootstrap refits with the same sign in ≥ 95%. Only stable coefficients are listed. Coefficients of twin features (`n_occurrences_*`, `active_*`, `over_days_*`, `late_cycles_*`) are left out because they move together with `tenure_days_*` / `is_live_*` and get offsetting signs. Full table: `(regenerate with `model.coefficients()` from sparse_levels.py)`.
+How to read: *odds ×k per SD* = one standard deviation more of the feature multiplies the odds of that label (vs all other labels) by k, holding the other features fixed. **Stable** = selected in ≥ 80% of 20 bootstrap refits with the same sign in ≥ 95%. Only stable coefficients are listed. Coefficients of twin features (`n_occurrences_*`, `active_*`, `over_days_*`, `late_cycles_*`) are left out because they move together with `tenure_days_*` / `is_live_*` and get offsetting signs. Full table: regenerate with `model.coefficients()` (model/sparse_levels.py).
 
 ## cloud  (55 of 103 features used, 23 stable)
 

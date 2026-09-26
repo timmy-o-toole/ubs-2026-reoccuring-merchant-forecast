@@ -1,10 +1,10 @@
 [project]
-name = "ubs-2026"
-version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.12"
+name = "ubs-2026-recurring-merchant-forecast"
+version = "1.0.0"
+description = "Sparse per-label logistic regression (L1 / lasso) that forecasts a client's next recurring merchant family"
+requires-python = ">=3.10"
 dependencies = [
-    "numpy>=2.5.3",
-    "pandas>=3.0.6",
-    "scikit-learn>=1.9.1",
+    "numpy",
+    "pandas",
+    "scikit-learn>=1.0",
 ]

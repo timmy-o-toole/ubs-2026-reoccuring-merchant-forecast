@@ -3,7 +3,7 @@
 One row per client, built purely from transactions up to the cutoff date
 (no leakage). Combines three groups of signal:
 
-  1. Per-category state, from recurring streams (src.recurrence): does the
+  1. Per-category state, from recurring streams (features.recurrence): does the
      client already have an active recurring subscription in each of the 7
      target categories, and what does that stream look like (recency,
      count, amount, cadence regularity).
@@ -26,8 +26,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src.category_map import TARGET_CATEGORIES
-from src.recurrence import detect_streams, load_transactions
+from features.category_map import TARGET_CATEGORIES
+from features.recurrence import detect_streams, load_transactions, tag_transactions
 
 RECENT_WINDOW_DAYS = 90
 # A stream counts as live if its next charge is overdue by at most this many days.
@@ -351,8 +351,25 @@ def _early_adoption_features(df: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataF
     return counts
 
 
-def build_features(transactions_path: str, cutoff_date: str) -> pd.DataFrame:
-    df = load_transactions(transactions_path)
+def _prepare_transactions(transactions: pd.DataFrame | str) -> pd.DataFrame:
+    """Path -> load_transactions; DataFrame -> copy, parse timestamps (UTC), tag if untagged."""
+    if not isinstance(transactions, pd.DataFrame):
+        return load_transactions(transactions)
+    df = transactions.reset_index(drop=True)  # copy with a clean 0..n-1 index
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+    if "category" not in df.columns:
+        df = tag_transactions(df)
+    return df
+
+
+def build_features(transactions: pd.DataFrame | str, cutoff_date: str) -> pd.DataFrame:
+    """One feature row per client: client_id + ~132 feature columns.
+
+    transactions: raw transactions table (DataFrame) or path to a jsonl file.
+    It should hold each client's history up to cutoff_date; nothing is
+    filtered here, so later rows would leak into the features.
+    """
+    df = _prepare_transactions(transactions)
     cutoff = pd.Timestamp(cutoff_date, tz="UTC")
 
     streams = detect_streams(df)
