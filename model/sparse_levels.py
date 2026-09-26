@@ -4,7 +4,7 @@
 
     model = fit_sparse_levels(X, y)          # X: feature table, y: a level per row
     model.predict(X_new)                     # predicted level per row
-    model.predict_proba(X_new)               # probability per level (DataFrame)
+    model.predict_proba(X_new)               # probability per level, each row sums to 1
     model.coefficients(top=5)                # the few features each level uses
     model.summary()                          # penalty and number of features per level
     model.explain(X_new.iloc[[0]])           # why this row got its prediction
@@ -123,9 +123,14 @@ class SparseLevelModel(BaseEstimator, ClassifierMixin):
 
     # ------------------------------------------------------------- predicting
     def predict_proba(self, X):
-        """Probability of each level (one column per level, rows as in X)."""
+        """Probability of each level (one column per level, rows as in X); each row sums to 1.
+
+        The per-level yes/no probabilities are rescaled to a distribution, which
+        does not change which level has the highest probability.
+        """
         Z = self._prepare(X)
         P = np.column_stack([self.models_[lv].predict_proba(Z)[:, 1] for lv in self.classes_])
+        P = P / P.sum(axis=1, keepdims=True)
         index = X.index if isinstance(X, pd.DataFrame) else None
         return pd.DataFrame(P, columns=self.classes_, index=index)
 

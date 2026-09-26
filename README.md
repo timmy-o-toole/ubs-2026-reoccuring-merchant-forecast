@@ -126,7 +126,7 @@ from model import fit_sparse_levels
 
 model = fit_sparse_levels(X, y)            # X: feature table, y: level per row
 model.predict(X_new)                       # predicted level per row
-model.predict_proba(X_new)                 # probability per level
+model.predict_proba(X_new)                 # probability per level (each row sums to 1)
 model.coefficients(top=5)                  # the features each level uses (odds ratios)
 model.explain(X_new.iloc[[0]])             # why this row got its prediction
 ```
