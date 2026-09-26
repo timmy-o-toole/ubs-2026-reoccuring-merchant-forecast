@@ -39,7 +39,7 @@ RAW TRANSACTIONS
         D1 general · D2 per-category · D3 adoption · D4 early adoption (D5-D8 added later)
   ─▶ E  Training-table construction            pipeline/data.py  training_set
   ─▶ F  Missing-value handling + scaling        model/sparse_levels.py  (inside the model)
-  ─▶ G  Final multiclass classifier            model/sparse_levels.py  sparse per-label LogReg (L1)
+  ─▶ G  Final multiclass classifier            model/sparse_levels.py  SparseLevels, L1 (lasso)
   ─▶ H  Prediction / decision rule             argmax of the per-label probabilities
   ─▶ I  Validation + macro-F1 evaluation       pipeline/evaluate.py
 ```
@@ -237,7 +237,7 @@ inside the model (model/sparse_levels.py).
 
 ## G — Final multiclass classifier
 
-Current: **sparse per-label logistic regression (L1 / lasso)**, one
+Current: **SparseLevels with L1 (lasso), one sparse logistic regression per label**, one
 yes/no model per label (model/sparse_levels.py). Earlier baselines (a single
 multinomial LogisticRegression, gradient boosting, a hand-written rule, the
 majority class) were tested and removed; see the experiment log below.
@@ -341,7 +341,7 @@ is an active stream. Run with `py -3.10 -m src.evaluate "<note>"`, raw rows in `
 | 27 | D | Discrete-time competing-risks hazard LogReg (daily charge hazard per live family, trained self-supervised on 6 historical cutoffs of train history; billing-day buckets dominate, OR 2.0 on the day, 0.08 at 8-14 days) -> p_first_<fam>, p_none90. Label-free first-charge hit 66.9% vs 66.6% day-of-month rule. Final model: + all 0.502, + p_none90 0.511, hazard-only rule 0.450 | – | – | 0.450 | – | – | ❌ timing already in the features |
 | 28 | D | Same window last year (charged in Jan / Jan-Mar 2025 per family, annual flag, n families Jan 2025). Month dummies are constant (shared cutoff). New-year check: no January start spike (gym ratio 1.11 like all families), no year-end cancellation wave | – | – | – | – | – | ❌ final 0.495-0.509 |
 | 29 | B/C5 | Tagging gap: untagged live 9-25 EUR streams -> music (<15.5) / streaming. Only 66 train clients; music band = base rate. Fold into is_live/active 0.503, 2 flags 0.504 | – | – | – | – | – | ❌ brand-new targets are genuinely new |
-| 30 | E | **Final model**: sparse per-label logistic regression (L1 / lasso), lean set, trained ONLY on the 2,000 labelled train clients; pseudo-labelled pretrain data removed (user decision: simpler, no dependency on extra labels; its +0.009 was within noise) | 0.504 | – | – | – | – | ✅ final |
+| 30 | E | **Final model**: SparseLevels with L1 (lasso), one sparse logistic regression per label, lean set, trained ONLY on the 2,000 labelled train clients; pseudo-labelled pretrain data removed (user decision: simpler, no dependency on extra labels; its +0.009 was within noise) | 0.504 | – | – | – | – | ✅ final |
 
 **Note (2026-09-24): valid/test differ from train.** Detected families per
 client: train 1.71, valid 1.33, test 1.19. Candidate subscription streams exist

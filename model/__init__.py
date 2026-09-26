@@ -1,5 +1,5 @@
-"""The model: sparse per-label logistic regression (L1 / lasso). See sparse_levels.py."""
+"""SparseLevels: one sparse logistic regression per level (L1 or elastic net). See sparse_levels.py."""
 
-from model.sparse_levels import SparseLevelModel, fit_sparse_levels
+from model.sparse_levels import SparseLevels, fit_sparse_levels
 
-__all__ = ["SparseLevelModel", "fit_sparse_levels"]
+__all__ = ["SparseLevels", "fit_sparse_levels"]

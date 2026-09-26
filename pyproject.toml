@@ -1,7 +1,7 @@
 [project]
 name = "ubs-2026-recurring-merchant-forecast"
 version = "1.0.0"
-description = "Sparse per-label logistic regression (L1 / lasso) that forecasts a client's next recurring merchant family"
+description = "SparseLevels: one sparse logistic regression per level (L1 or elastic net), forecasting a client's next recurring merchant family"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
