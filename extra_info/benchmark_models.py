@@ -17,7 +17,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
@@ -33,8 +33,6 @@ from pipeline.evaluate import build_model, macro_f1  # noqa: E402
 
 def binary_model(kind):
     return {
-        "RF": lambda: make_pipeline(SimpleImputer(strategy="median"), RandomForestClassifier(
-            n_estimators=300, min_samples_leaf=5, class_weight="balanced_subsample", n_jobs=-1, random_state=0)),
         "HGB": lambda: HistGradientBoostingClassifier(random_state=0),
         "XGBoost": lambda: XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.1, n_jobs=-1,
                                          random_state=0, eval_metric="logloss"),
@@ -47,10 +45,7 @@ def fit_per_label(kind, X, y):
         yb = (y == lab).astype(int).values
         w = compute_sample_weight("balanced", yb)
         m = binary_model(kind)
-        if kind == "RF":
-            m.fit(X, yb)
-        else:
-            m.fit(X, yb, sample_weight=w)
+        m.fit(X, yb, sample_weight=w)
         models[lab] = m
     return models
 
@@ -64,8 +59,6 @@ def global_model(kind):
     return {
         "LogReg": make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
                                 LogisticRegression(max_iter=2000, class_weight="balanced")),
-        "RF": make_pipeline(SimpleImputer(strategy="median"), RandomForestClassifier(
-            n_estimators=300, min_samples_leaf=5, class_weight="balanced_subsample", n_jobs=-1, random_state=0)),
         "HGB": HistGradientBoostingClassifier(random_state=0),
         "XGBoost": XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.1, n_jobs=-1, random_state=0,
                                  eval_metric="mlogloss"),
@@ -80,14 +73,14 @@ def main():
 
     t = time.time(); sl = build_model().fit(X, y); ft = time.time() - t
     rows.append(("per label", "SparseLevels, L1 LogReg (ours)", macro_f1(yv, sl.predict(Xv)), ft))
-    for kind in ("RF", "HGB", "XGBoost"):
+    for kind in ("HGB", "XGBoost"):
         t = time.time(); models = fit_per_label(kind, X, y); ft = time.time() - t
         rows.append(("per label", kind, macro_f1(yv, predict_per_label(models, Xv)), ft))
 
     codes = {lab: i for i, lab in enumerate(LABELS)}
     yi = y.map(codes).values
     w = compute_sample_weight("balanced", y)
-    for kind in ("LogReg", "RF", "HGB", "XGBoost"):
+    for kind in ("LogReg", "HGB", "XGBoost"):
         m = global_model(kind)
         t = time.time()
         if kind in ("HGB", "XGBoost"):
