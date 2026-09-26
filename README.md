@@ -69,7 +69,7 @@ subscription is due first"*, *"does the client travel"*.
 
 \*macro-F1 points lost when the block is removed.
 
-### 2 · One L1 logistic regression per label
+### 2 · Sparse per-label logistic regression (L1 / lasso)
 Each of the 8 labels gets its own yes/no model ("is it gym?"). The L1 (lasso)
 penalty sets unhelpful coefficients to zero, so each label keeps its own
 feature list (in the final model between 59 features for cloud and 96 for
@@ -87,14 +87,42 @@ gym subscription (×1.8)*.
 **Macro-F1 0.513** on the validation set (1,000 clients the model has never seen).
 Training data: 2,000 labelled clients + 3,152 pseudo-labelled extra clients.
 
-## Use the model on your own data
+## Repository: three independent parts
 
-The method lives in one standalone file, [`sparse_levels.py`](sparse_levels.py)
-(only numpy, pandas and scikit-learn). It works for any feature table and any
-"levels": class labels, cluster ids or customer segments.
+```
+features/   raw transactions (a table) -> one feature row per client
+model/      the model: sparse per-label logistic regression (L1 / lasso), generic
+pipeline/   our task: data paths, labels, pseudo-labels, evaluation, submission
+data/       challenge data (dataset.zip) + pseudo-labels
+extra_info/ experiment log, verified interpretations, coefficients per label
+```
+
+`features/` and `model/` never read files and know nothing about our data
+paths; only `pipeline/` does. So you can reuse them for a similar task.
+
+## Use it on similar data
+
+**Transactions -> forecast.** Your transactions need the columns `client_id,
+timestamp, amount, direction, type, mcc, description` (history up to your
+cutoff); `y` is the label per client.
 
 ```python
-from sparse_levels import fit_sparse_levels
+import pandas as pd
+from features import build_features, select_features
+from model import fit_sparse_levels
+
+tx = pd.read_json("my_transactions.jsonl", lines=True, dtype={"mcc": str})
+F = build_features(tx, cutoff_date="2026-01-01")          # one row per client
+X = select_features(F.drop(columns="client_id"), "lean")  # the 103 model features
+model = fit_sparse_levels(X, y)                           # y: label per client (same order as F)
+model.predict(X)
+```
+
+**Any feature table -> any levels.** The model alone works on any table and
+any levels (class labels, cluster ids, customer segments):
+
+```python
+from model import fit_sparse_levels
 
 model = fit_sparse_levels(X, y)            # X: feature table, y: level per row
 model.predict(X_new)                       # predicted level per row
@@ -103,27 +131,19 @@ model.coefficients(top=5)                  # the features each level uses (odds 
 model.explain(X_new.iloc[[0]])             # why this row got its prediction
 ```
 
-Options: `penalty="l1"` (lasso, sparsest, default) or `penalty="elasticnet"`
-with `l1_ratio` (more stable with strongly correlated features); `Cs=(...)`
-for the candidate penalty strengths (one value = fixed penalty); `levels=[...]`
-to fix the order of the levels. Run `py sparse_levels.py` for a small demo.
+Options: `Cs=(...)` candidate penalty strengths (one value = fixed penalty),
+`levels=[...]` fixed order of the levels, `penalty="elasticnet"` with `l1_ratio`
+as an optional alternative to L1 (not used in our final model).
+`py model/sparse_levels.py` runs a small demo. The file is self-contained
+(numpy, pandas, scikit-learn), so you can also copy it on its own.
 
 ## Run our pipeline
 
 ```bash
-pip install -e .                      # Python >= 3.10
+pip install numpy pandas "scikit-learn>=1.0"   # Python >= 3.10
 unzip data/dataset.zip -d data/
-py -3.10 -m src.evaluate "my run"     # train, score on validation, log
-py -3.10 -m src.make_submission       # -> data/submission_final.csv
-```
-
-## Repository
-
-```
-sparse_levels.py  the method: one sparse logistic regression per level (standalone)
-src/          category_map (tagging) · recurrence (streams) · features · model · evaluate · make_submission
-data/         challenge data (dataset.zip) + pseudo-labels
-extra_info/   experiment log, verified interpretations, coefficients per label
+py -3.10 -m pipeline.evaluate "my run"         # train, score on validation, log
+py -3.10 -m pipeline.make_submission           # -> data/submission_final.csv
 ```
 
 Challenge data and task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swiss-ai-Weeks/ubs-2026) (Apache 2.0).

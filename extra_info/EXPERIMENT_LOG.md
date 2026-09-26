@@ -32,16 +32,16 @@ The target label is never an input feature.
 
 ```
 RAW TRANSACTIONS
-  ─▶ A  Transaction preprocessing              src/recurrence.py  load_transactions
-  ─▶ B  Transaction category mapping           src/category_map.py
-  ─▶ C  Recurring-stream detection             src/recurrence.py  detect_streams
-  ─▶ D  Client feature engineering             src/features.py
-        D1 general · D2 per-category · D3 adoption · D4 early adoption
-  ─▶ E  Training-table construction            (features + labels join)
-  ─▶ F  Missing-value handling + scaling        src/model.py  build_logreg
-  ─▶ G  Final multiclass classifier            src/model.py
-  ─▶ H  Prediction / decision rule             models/rule_based/model.py
-  ─▶ I  Validation + macro-F1 evaluation       src/model.py  evaluate
+  ─▶ A  Transaction preprocessing              features/recurrence.py  load_transactions
+  ─▶ B  Transaction category mapping           features/category_map.py
+  ─▶ C  Recurring-stream detection             features/recurrence.py  detect_streams
+  ─▶ D  Client feature engineering             features/build.py
+        D1 general · D2 per-category · D3 adoption · D4 early adoption (D5-D8 added later)
+  ─▶ E  Training-table construction            pipeline/data.py  training_set
+  ─▶ F  Missing-value handling + scaling        model/sparse_levels.py  (inside the model)
+  ─▶ G  Final multiclass classifier            model/sparse_levels.py  sparse per-label LogReg (L1)
+  ─▶ H  Prediction / decision rule             argmax of the per-label probabilities
+  ─▶ I  Validation + macro-F1 evaluation       pipeline/evaluate.py
 ```
 
 | Code | Name |
@@ -177,7 +177,7 @@ category`.
 ## D — Client feature engineering
 
 `src/features.py`. Many transactions become one row per client.
-*(Verified)*: **78 features** = 18 (D1) + 49 (D2) + 4 (D3) + 7 (D4).
+*(Verified 2026-09-24, D1-D4 only)*: **78 features** = 18 (D1) + 49 (D2) + 4 (D3) + 7 (D4). Later blocks (D5-D8) and pruning give the 103-feature `lean` set of the final model.
 
 ### D1. General financial features (18)
 `tenure_days, recency_days, n_txns, n_txns_per_month, total_out, total_in,
@@ -216,7 +216,7 @@ last 90 days before the cutoff.
 
 *(Verified)*: this counts **all** tagged recent transactions, including ones
 that are already part of a recurring stream, and including decoys. The
-"not yet recurring" filter is applied only in `rule_predict`
+"not yet recurring" filter was applied only in the (since removed) rule
 (`active_<cat> == 0`), not in the feature itself.
 
 Motivation from earlier analysis: about 47% of non-`none` targets looked like
@@ -232,20 +232,21 @@ with labels yet (draft: `src/evaluate.py`).
 
 ## F — Missing-value handling and scaling
 
-Logistic regression only: `SimpleImputer(median)` fitted on train, then
-`StandardScaler`. HGB takes NaN natively and gets no preprocessing.
+`SimpleImputer(median)` fitted on train, then `StandardScaler`; both happen
+inside the model (model/sparse_levels.py).
 
 ## G — Final multiclass classifier
 
-Best so far: `LogisticRegression(class_weight="balanced", max_iter=2000)`
-(multinomial). Also tested: `HistGradientBoostingClassifier` (class-balanced),
-the hand-written rule, and the majority class.
+Current: **sparse per-label logistic regression (L1 / lasso)**, one
+yes/no model per label (model/sparse_levels.py). Earlier baselines (a single
+multinomial LogisticRegression, gradient boosting, a hand-written rule, the
+majority class) were tested and removed; see the experiment log below.
 
 ## H — Prediction / decision rule
 
 Classifiers: argmax of the class probabilities, giving one of 8 labels.
 
-`rule_predict` (no learning):
+The hand-written rule (no learning; later removed from the code):
 1. families with `recent_txns > 0` and not active → pick the one with the most recent transactions
 2. else active families → pick the smallest `recency_days` (**bug**: that's
    the most recently paid, i.e. due *last*; fix in stash)

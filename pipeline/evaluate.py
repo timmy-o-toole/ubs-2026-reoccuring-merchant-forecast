@@ -1,14 +1,12 @@
-"""Score the model on the validation set and log the result.
+"""Train the model, score it on the validation set and log the result.
 
-    py -3.10 -m src.evaluate "short description of the change"
+    py -3.10 -m pipeline.evaluate "short description of the change"
 
-Rebuilds train/valid features from the raw jsonl (so changes in
-category_map / recurrence / features are picked up), trains the model on the
-train clients + pseudo-labelled pretrain clients (never on valid), prints
-macro-F1, per-label F1 and the confusion matrix on valid, and appends one row
-per run to extra_info/experiments.csv.
+The model is trained on the train clients + pseudo-labelled pretrain clients
+(never on valid). Prints macro-F1, per-label F1 and the confusion matrix on
+valid, and appends one row per run to extra_info/experiments.csv.
 
-Also prints stream-detection diagnostics on valid, independent of the model:
+Stream-detection diagnostics on valid (independent of the model):
   c_detect      share of non-'none' clients whose target family is an active stream
   c_nextdue     share of non-'none' clients where the active stream due soonest is the target
   c_none_active share of 'none' clients with >= 1 active stream
@@ -25,39 +23,26 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, f1_score
 
-from src.features import build_features, select_features
-from src.model import ALL_LABELS, LABEL_COL, build_model
-from src.pseudo import pseudo_labelled_features
-from src.recurrence import detect_streams, load_transactions
+from features import detect_streams
+from model import SparseLevelModel
+from pipeline.data import CUTOFF, LABEL_COL, LABELS, labelled_features, read_transactions, training_set
 
-CUTOFF = "2026-01-01"
 LOG_PATH = "extra_info/experiments.csv"
-FEATURE_SET = "lean"
 
 
-def labelled_features(split: str) -> pd.DataFrame:
-    feats = build_features(f"data/{split}_transactions.jsonl", CUTOFF)
-    labels = pd.read_csv(f"data/{split}_labels.csv")[["client_id", LABEL_COL]]
-    return labels.merge(feats, on="client_id", how="left")
-
-
-def training_set(train: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    """Model features of the train clients + pseudo-labelled pretrain clients."""
-    X = select_features(train.drop(columns=["client_id", LABEL_COL]), FEATURE_SET)
-    pseudo = pseudo_labelled_features()
-    X = pd.concat([X, pseudo[X.columns]], ignore_index=True)
-    y = pd.concat([train[LABEL_COL], pseudo[LABEL_COL]], ignore_index=True)
-    return X, y
+def build_model() -> SparseLevelModel:
+    """Sparse per-label logistic regression (L1 / lasso) for our 8 labels."""
+    return SparseLevelModel(levels=LABELS)
 
 
 def macro_f1(y_true, y_pred) -> float:
-    return f1_score(y_true, y_pred, average="macro", labels=ALL_LABELS, zero_division=0)
+    return f1_score(y_true, y_pred, average="macro", labels=LABELS, zero_division=0)
 
 
 def stream_diagnostics(split: str) -> dict[str, float]:
     cutoff = pd.Timestamp(CUTOFF, tz="UTC")
     labels = pd.read_csv(f"data/{split}_labels.csv").set_index("client_id")[LABEL_COL]
-    streams = detect_streams(load_transactions(f"data/{split}_transactions.jsonl"))
+    streams = detect_streams(read_transactions(split))
     active = streams[streams["is_recurring"] & streams["category"].notna()].copy()
 
     families = active.groupby("client_id")["category"].apply(set)
@@ -91,10 +76,10 @@ def main() -> None:
     for k, v in diag.items():
         print(f"  {k:14s} {v:.3f}")
     print("\nper-label F1:")
-    for lab, s in zip(ALL_LABELS, f1_score(y_valid, pred, average=None, labels=ALL_LABELS, zero_division=0)):
+    for lab, s in zip(LABELS, f1_score(y_valid, pred, average=None, labels=LABELS, zero_division=0)):
         print(f"  {lab:10s} {s:.3f}")
     print("\nconfusion (rows=true, cols=pred):")
-    print(pd.DataFrame(confusion_matrix(y_valid, pred, labels=ALL_LABELS), index=ALL_LABELS, columns=ALL_LABELS))
+    print(pd.DataFrame(confusion_matrix(y_valid, pred, labels=LABELS), index=LABELS, columns=LABELS))
 
     row = {"time": dt.datetime.now().isoformat(timespec="seconds"), "note": note,
            "final_sparse_lean_pseudo": f"{score:.4f}", **{k: f"{v:.3f}" for k, v in diag.items()}}

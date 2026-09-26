@@ -1,7 +1,7 @@
-"""Write the test submission with the model.
+"""Write the test submission.
 
-    py -3.10 -m src.make_submission            # -> data/submission_final.csv
-    py -3.10 -m src.make_submission --suffix x # -> data/submission_x.csv
+    py -3.10 -m pipeline.make_submission             # -> data/submission_final.csv
+    py -3.10 -m pipeline.make_submission --suffix x  # -> data/submission_x.csv
 
 The model is trained on the train clients + pseudo-labelled pretrain clients
 (never on valid). Its valid macro-F1 is printed first, then the same model
@@ -12,9 +12,9 @@ import argparse
 
 import pandas as pd
 
-from src.evaluate import CUTOFF, labelled_features, macro_f1, training_set
-from src.features import build_features
-from src.model import ALL_LABELS, LABEL_COL, build_model
+from features import build_features
+from pipeline.data import CUTOFF, LABEL_COL, LABELS, labelled_features, read_transactions, training_set
+from pipeline.evaluate import build_model, macro_f1
 
 
 def main() -> None:
@@ -30,7 +30,7 @@ def main() -> None:
     print(f"model valid macro-F1: {macro_f1(valid[LABEL_COL], model.predict(valid[X_train.columns])):.4f}")
 
     sample = pd.read_csv("data/sample_submission.csv")
-    test = sample[["client_id"]].merge(build_features("data/test_transactions.jsonl", CUTOFF),
+    test = sample[["client_id"]].merge(build_features(read_transactions("test"), CUTOFF),
                                        on="client_id", how="left")
     sub = pd.DataFrame({"client_id": sample["client_id"],
                         "predicted_next_recurring_merchant": model.predict(test[X_train.columns])})
@@ -39,7 +39,7 @@ def main() -> None:
     assert list(sub.columns) == list(sample.columns)
     assert len(sub) == len(sample) and sub["client_id"].is_unique
     assert set(sub["client_id"]) == set(sample["client_id"])
-    assert sub["predicted_next_recurring_merchant"].isin(ALL_LABELS).all()
+    assert sub["predicted_next_recurring_merchant"].isin(LABELS).all()
 
     sub.to_csv(out_path, index=False)
     print(f"wrote {out_path}: {len(sub)} rows")
