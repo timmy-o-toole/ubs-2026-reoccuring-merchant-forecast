@@ -1,6 +1,6 @@
 # Interpreting the Sparse Per-Label Logistic Regression
 
-> **Note:** these numbers come from an earlier, train-only version of the model (lean set with 101 features, before the traveller features; valid macro-F1 0.4945). The final model adds 2 traveller features (103) and 3,152 pseudo-labelled clients (valid 0.513); the direction of every effect is unchanged.
+> **Note:** these numbers come from an earlier, train-only version of the model (lean set with 101 features, before the traveller features; valid macro-F1 0.4945). The final model adds 2 traveller features (103 features, valid 0.504); the direction of every effect is unchanged.
 
 Model: sparse per-label logistic regression (L1 / lasso), `lean` feature set (101 features, train-only version).
 Valid macro-F1: **0.4945** (fit on train only).

@@ -72,8 +72,8 @@ subscription is due first"*, *"does the client travel"*.
 ### 2 · Sparse per-label logistic regression (L1 / lasso)
 Each of the 8 labels gets its own yes/no model ("is it gym?"). The L1 (lasso)
 penalty sets unhelpful coefficients to zero, so each label keeps its own
-feature list (in the final model between 59 features for cloud and 96 for
-`none`, out of 103). Each label picks its own penalty strength by
+feature list (between 23 features for music and 80 for `none`, out of
+103). Each label picks its own penalty strength by
 cross-validation.
 
 ### 3 · Decision
@@ -84,16 +84,16 @@ gym subscription (×1.8)*.
 
 ## Result
 
-**Macro-F1 0.513** on the validation set (1,000 clients the model has never seen).
-Training data: 2,000 labelled clients + 3,152 pseudo-labelled extra clients.
+**Macro-F1 0.504** on the validation set (1,000 clients the model has never seen).
+Training data: only the 2,000 labelled train clients.
 
 ## Repository: three independent parts
 
 ```
 features/   raw transactions (a table) -> one feature row per client
 model/      the model: sparse per-label logistic regression (L1 / lasso), generic
-pipeline/   our task: data paths, labels, pseudo-labels, evaluation, submission
-data/       challenge data (dataset.zip) + pseudo-labels
+pipeline/   our task: data paths, labels, training set, evaluation, submission
+data/       challenge data (dataset.zip)
 extra_info/ experiment log, verified interpretations, coefficients per label
 ```
 
