@@ -71,8 +71,9 @@ subscription is due first"*, *"does the client travel"*.
 
 ### 2 · One L1 logistic regression per label
 Each of the 8 labels gets its own yes/no model ("is it gym?"). The L1 (lasso)
-penalty keeps only the features that matter for that label, e.g. music uses
-23 features and `none` uses 80. Each label picks its own penalty strength by
+penalty sets unhelpful coefficients to zero, so each label keeps its own
+feature list (in the final model between 59 features for cloud and 96 for
+`none`, out of 103). Each label picks its own penalty strength by
 cross-validation.
 
 ### 3 · Decision
@@ -92,7 +93,28 @@ gym subscription (×1.8)*.
 Training data: 2,000 labelled clients + 3,152 pseudo-labelled extra clients.
 The model is scored on validation clients it has never seen.
 
-## Run it
+## Use the model on your own data
+
+The method lives in one standalone file, [`sparse_levels.py`](sparse_levels.py)
+(only numpy, pandas and scikit-learn). It works for any feature table and any
+"levels": class labels, cluster ids or customer segments.
+
+```python
+from sparse_levels import fit_sparse_levels
+
+model = fit_sparse_levels(X, y)            # X: feature table, y: level per row
+model.predict(X_new)                       # predicted level per row
+model.predict_proba(X_new)                 # probability per level
+model.coefficients(top=5)                  # the features each level uses (odds ratios)
+model.explain(X_new.iloc[[0]])             # why this row got its prediction
+```
+
+Options: `penalty="l1"` (lasso, sparsest, default) or `penalty="elasticnet"`
+with `l1_ratio` (more stable with strongly correlated features); `Cs=(...)`
+for the candidate penalty strengths (one value = fixed penalty); `levels=[...]`
+to fix the order of the levels. Run `py sparse_levels.py` for a small demo.
+
+## Run our pipeline
 
 ```bash
 pip install -e .                      # Python >= 3.10
@@ -104,6 +126,7 @@ py -3.10 -m src.make_submission sparse --features lean --pseudo --suffix final
 ## Repository
 
 ```
+sparse_levels.py  the method: one sparse logistic regression per level (standalone)
 src/          category_map (tagging) · recurrence (streams) · features · model · evaluate · make_submission
 data/         challenge data (dataset.zip) + pseudo-labels
 extra_info/   experiment log, verified interpretations, coefficients per label
