@@ -82,16 +82,10 @@ has a short list of coefficients, each prediction can be explained, e.g.
 *gym is likely because of recent gym payments (odds ×2.5) and a long-running
 gym subscription (×1.8)*.
 
-## Results (macro-F1, validation set)
+## Result
 
-| Model | Macro-F1 |
-|---|---|
-| **Our model: sparse L1 logistic regression per label** | **0.513** |
-| One global logistic regression | 0.489 |
-| Simple rule: "subscription due first" | 0.484 |
-
+**Macro-F1 0.513** on the validation set (1,000 clients the model has never seen).
 Training data: 2,000 labelled clients + 3,152 pseudo-labelled extra clients.
-The model is scored on validation clients it has never seen.
 
 ## Use the model on your own data
 
@@ -119,8 +113,8 @@ to fix the order of the levels. Run `py sparse_levels.py` for a small demo.
 ```bash
 pip install -e .                      # Python >= 3.10
 unzip data/dataset.zip -d data/
-py -3.10 -m src.evaluate "my run"     # score on validation
-py -3.10 -m src.make_submission sparse --features lean --pseudo --suffix final
+py -3.10 -m src.evaluate "my run"     # train, score on validation, log
+py -3.10 -m src.make_submission       # -> data/submission_final.csv
 ```
 
 ## Repository
