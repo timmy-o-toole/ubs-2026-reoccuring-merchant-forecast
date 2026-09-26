@@ -1,8 +1,8 @@
-# Individual Coefficients of the Sparse Per-Label Logistic Regression
+# SparseLevels: Individual Coefficients
 
 > These numbers come from the final model: lean set (103 features), trained on the 2,000 labelled train clients, valid macro-F1 0.504.
 
-Model: **sparse per-label logistic regression (L1 / lasso)**, `lean` feature set (103 features), trained on the labelled train clients. Valid macro-F1 **0.504**.
+Model: **SparseLevels with L1 (lasso), one sparse logistic regression per label**, `lean` feature set (103 features), trained on the labelled train clients. Valid macro-F1 **0.504**.
 
 How to read: *odds ×k per SD* = one standard deviation more of the feature multiplies the odds of that label (vs all other labels) by k, holding the other features fixed. **Stable** = selected in ≥ 80% of 20 bootstrap refits with the same sign in ≥ 95%. Only stable coefficients are listed. Coefficients of twin features (`n_occurrences_*`, `active_*`, `over_days_*`, `late_cycles_*`) are left out because they move together with `tenure_days_*` / `is_live_*` and get offsetting signs. Full table: regenerate with `model.coefficients()` (model/sparse_levels.py).
 

@@ -24,15 +24,15 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix, f1_score
 
 from features import detect_streams
-from model import SparseLevelModel
+from model import SparseLevels
 from pipeline.data import CUTOFF, LABEL_COL, LABELS, labelled_features, read_transactions, training_set
 
 LOG_PATH = "extra_info/experiments.csv"
 
 
-def build_model() -> SparseLevelModel:
-    """Sparse per-label logistic regression (L1 / lasso) for our 8 labels."""
-    return SparseLevelModel(levels=LABELS)
+def build_model() -> SparseLevels:
+    """SparseLevels for our task: one sparse logistic regression per label, L1 (lasso) penalty."""
+    return SparseLevels(levels=LABELS)
 
 
 def macro_f1(y_true, y_pred) -> float:

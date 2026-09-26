@@ -1,4 +1,4 @@
-"""Sparse per-label logistic regression: one L1 (lasso) logistic regression per level.
+"""SparseLevels: one sparse logistic regression per level (L1 or elastic net).
 
     from model import fit_sparse_levels      # or copy this file and: from sparse_levels import ...
 
@@ -35,10 +35,10 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 
-__all__ = ["SparseLevelModel", "fit_sparse_levels"]
+__all__ = ["SparseLevels", "fit_sparse_levels"]
 
 
-class SparseLevelModel(BaseEstimator, ClassifierMixin):
+class SparseLevels(BaseEstimator, ClassifierMixin):
     """One sparse (L1 or elastic-net) yes/no logistic regression per level.
 
     Parameters
@@ -180,9 +180,9 @@ class SparseLevelModel(BaseEstimator, ClassifierMixin):
         return pd.DataFrame(rows)
 
 
-def fit_sparse_levels(X, y, sample_weight=None, **kwargs) -> SparseLevelModel:
-    """Fit a SparseLevelModel in one call; kwargs go to SparseLevelModel (levels, penalty, Cs, ...)."""
-    return SparseLevelModel(**kwargs).fit(X, y, sample_weight=sample_weight)
+def fit_sparse_levels(X, y, sample_weight=None, **kwargs) -> SparseLevels:
+    """Fit a SparseLevels in one call; kwargs go to SparseLevels (levels, penalty, Cs, ...)."""
+    return SparseLevels(**kwargs).fit(X, y, sample_weight=sample_weight)
 
 
 if __name__ == "__main__":

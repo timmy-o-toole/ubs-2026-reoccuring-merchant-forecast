@@ -6,7 +6,9 @@ in the 90 days after `2026-01-01`:
 Metric: macro-F1 over the 8 labels.
 
 **Our idea:** find the right features, keep the model lean, make every
-forecast explainable.
+forecast explainable. We call the model **SparseLevels**: one sparse
+logistic regression per level (L1 or elastic net). Here the levels are the 8
+labels and we use L1 (lasso).
 
 ## Method at a glance
 
@@ -38,7 +40,7 @@ forecast explainable.
                                   ▼
                        103 features per client
                                   │
-  ════════════ 2 · ONE L1 LOGISTIC REGRESSION PER LABEL ════════════
+  ═════ 2 · SPARSELEVELS: ONE SPARSE LOGISTIC REGRESSION PER LABEL ══════
                                   │
    ┌───────┬───────┬───────┬──────┴┬───────┬───────┬───────┐
    ▼       ▼       ▼       ▼       ▼       ▼       ▼       ▼
@@ -69,9 +71,10 @@ subscription is due first"*, *"does the client travel"*.
 
 \*macro-F1 points lost when the block is removed.
 
-### 2 · Sparse per-label logistic regression (L1 / lasso)
-Each of the 8 labels gets its own yes/no model ("is it gym?"). The L1 (lasso)
-penalty sets unhelpful coefficients to zero, so each label keeps its own
+### 2 · SparseLevels: one sparse logistic regression per label
+Each of the 8 labels gets its own yes/no model ("is it gym?"). A sparse
+penalty sets unhelpful coefficients to zero; we use L1 (lasso), elastic net is
+the optional alternative. So each label keeps its own
 feature list (between 23 features for music and 80 for `none`, out of
 103). Each label picks its own penalty strength by
 cross-validation.
@@ -91,7 +94,7 @@ Training data: only the 2,000 labelled train clients.
 
 ```
 features/   raw transactions (a table) -> one feature row per client
-model/      the model: sparse per-label logistic regression (L1 / lasso), generic
+model/      the model: SparseLevels, one sparse logistic regression per level (L1 or elastic net), generic
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
 extra_info/ experiment log, verified interpretations, coefficients per label
