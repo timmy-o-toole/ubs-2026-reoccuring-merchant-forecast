@@ -4,7 +4,7 @@
 
 Final model: **sparse per-label logistic regression**, `lean` feature set (103 features), fit on train. Valid macro-F1 **0.5036**.
 
-How to read: *odds ×k per SD* = one standard deviation more of the feature multiplies the odds of that label (vs all other labels) by k, holding the other features fixed. **Stable** = selected in ≥ 80% of 20 bootstrap refits with the same sign in ≥ 95%. Only stable coefficients are listed. Coefficients of twin features (`n_occurrences_*`, `active_*`, `over_days_*`, `late_cycles_*`) are left out because they move together with `tenure_days_*` / `is_live_*` and get offsetting signs. Full table: `(regenerate with src/model.py coef_table)`.
+How to read: *odds ×k per SD* = one standard deviation more of the feature multiplies the odds of that label (vs all other labels) by k, holding the other features fixed. **Stable** = selected in ≥ 80% of 20 bootstrap refits with the same sign in ≥ 95%. Only stable coefficients are listed. Coefficients of twin features (`n_occurrences_*`, `active_*`, `over_days_*`, `late_cycles_*`) are left out because they move together with `tenure_days_*` / `is_live_*` and get offsetting signs. Full table: `(regenerate with `model.coefficients()` from sparse_levels.py)`.
 
 ## cloud  (55 of 103 features used, 23 stable)
 
