@@ -2,9 +2,9 @@
 
     py -3.10 -m pipeline.evaluate "short description of the change"
 
-The model is trained on the train clients + pseudo-labelled pretrain clients
-(never on valid). Prints macro-F1, per-label F1 and the confusion matrix on
-valid, and appends one row per run to extra_info/experiments.csv.
+The model is trained only on the labelled train clients (never on valid).
+Prints macro-F1, per-label F1 and the confusion matrix on valid, and appends
+one row per run to extra_info/experiments.csv.
 
 Stream-detection diagnostics on valid (independent of the model):
   c_detect      share of non-'none' clients whose target family is an active stream
@@ -82,7 +82,7 @@ def main() -> None:
     print(pd.DataFrame(confusion_matrix(y_valid, pred, labels=LABELS), index=LABELS, columns=LABELS))
 
     row = {"time": dt.datetime.now().isoformat(timespec="seconds"), "note": note,
-           "final_sparse_lean_pseudo": f"{score:.4f}", **{k: f"{v:.3f}" for k, v in diag.items()}}
+           "sparse_logreg_lean": f"{score:.4f}", **{k: f"{v:.3f}" for k, v in diag.items()}}
     old = pd.read_csv(LOG_PATH, dtype=str) if os.path.exists(LOG_PATH) else pd.DataFrame(columns=list(row))
     cols = list(old.columns) + [c for c in row if c not in old.columns]
     pd.concat([old, pd.DataFrame([row])], ignore_index=True)[cols].to_csv(LOG_PATH, index=False)
