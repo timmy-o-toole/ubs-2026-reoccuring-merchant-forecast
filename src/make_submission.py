@@ -21,8 +21,8 @@ BUILDERS = {"logreg": build_logreg, "sparse": build_sparse_logreg}
 
 
 def _weights(model: str, w) -> dict:
-    """Sample weights for the pipeline's classifier step (only the sparse model uses them)."""
-    return {"clf__sample_weight": w} if model == "sparse" else {}
+    """Sample weights for the sparse model (the other models ignore them)."""
+    return {"sample_weight": w} if model == "sparse" else {}
 
 
 def main() -> None:

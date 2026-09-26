@@ -1,36 +1,25 @@
-"""Trains and compares baseline models for target_next_recurring_merchant.
+"""Models for target_next_recurring_merchant (macro-F1 on valid).
 
-All models are fit on train_features.csv and scored on valid_features.csv
-using macro-F1, matching the competition metric exactly (README.md ->
-Task Specification). Four models, in increasing sophistication:
-
-  1. majority  - always predict the most common training label ('none').
-                 The floor: any real model must beat this.
-  2. rule      - hand-written heuristic using only the recurring-stream
-                 features (no learning). Tests how much a trained model
-                 actually adds over the engineered features alone.
-  3. logreg    - multinomial logistic regression, class-balanced. Needs
-                 imputation + scaling since it can't handle NaN/unscaled
-                 inputs the way trees can.
-  4. hgb       - HistGradientBoostingClassifier, class-balanced. Handles
-                 NaN natively (important: NaN here means "no active
-                 subscription in this category", a real, informative
-                 state, not a value to impute away).
+  - sparse   - FINAL model: one sparse L1 logistic regression per label,
+               from the standalone file sparse_levels.py (build_sparse_logreg).
+  - logreg   - one global multinomial L2 logistic regression (benchmark).
+  - rule     - no learning: the live subscription due first, else 'none'.
+  - majority - always the most common label (floor).
+  - hgb      - gradient boosting (reference only, not used).
 """
 
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import ConfusionMatrixDisplay, classification_report, confusion_matrix, f1_score
-from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from sparse_levels import SparseLevelModel
 from src.category_map import TARGET_CATEGORIES
 
 LABEL_COL = "target_next_recurring_merchant"
@@ -84,78 +73,13 @@ def build_logreg() -> Pipeline:
     )
 
 
-class SparsePerLabelLogReg(BaseEstimator, ClassifierMixin):
-    """Benchmark model 2: one sparse yes/no logistic regression per label.
+def build_sparse_logreg() -> SparseLevelModel:
+    """Final model: one sparse L1 logistic regression per label (see sparse_levels.py).
 
-    For each label ("is it gym?", "is it music?", ..., "is it none?") an
-    L1-penalised logistic regression keeps only the predictors that matter
-    for that label. Each label picks its own penalty C by inner CV on the
-    training data, so easy labels end up very sparse and messy ones (none)
-    keep more. Prediction = label with the highest probability.
-
-    Each coefficient reads as: effect of +1 standard deviation of the
-    feature on the log-odds of *this* label vs all others. See coef_table().
+    Imputation and scaling happen inside the model. Interpret a fitted model
+    with .coefficients(), .summary() and .explain().
     """
-
-    def __init__(self, Cs=(0.03, 0.1, 0.3, 1.0), inner_folds=3):
-        self.Cs = Cs
-        self.inner_folds = inner_folds
-
-    def _model(self, C):
-        return LogisticRegression(penalty="l1", solver="liblinear", C=C,
-                                  class_weight="balanced", max_iter=2000, random_state=0)
-
-    def fit(self, X, y, sample_weight=None):
-        """sample_weight: optional per-row weights, e.g. lower weight for pseudo-labelled rows."""
-        X, y = np.asarray(X), np.asarray(y)
-        w = np.ones(len(y)) if sample_weight is None else np.asarray(sample_weight, dtype=float)
-        self.classes_ = np.array(ALL_LABELS)
-        self.models_, self.C_ = {}, {}
-        for label in self.classes_:
-            yb = (y == label).astype(int)
-            folds = StratifiedKFold(self.inner_folds, shuffle=True, random_state=0)
-            cv = {
-                C: np.mean([f1_score(yb[te], self._model(C).fit(X[tr], yb[tr], sample_weight=w[tr]).predict(X[te]),
-                                     sample_weight=w[te], zero_division=0)
-                            for tr, te in folds.split(X, yb)])
-                for C in self.Cs
-            }
-            self.C_[label] = max(cv, key=cv.get)
-            self.models_[label] = self._model(self.C_[label]).fit(X, yb, sample_weight=w)
-        return self
-
-    def predict_proba(self, X):
-        X = np.asarray(X)
-        return np.column_stack([self.models_[l].predict_proba(X)[:, 1] for l in self.classes_])
-
-    def predict(self, X):
-        return self.classes_[np.argmax(self.predict_proba(X), axis=1)]
-
-
-def build_sparse_logreg() -> Pipeline:
-    return Pipeline(
-        [
-            ("impute", SimpleImputer(strategy="median")),
-            ("scale", StandardScaler()),
-            ("clf", SparsePerLabelLogReg()),
-        ]
-    )
-
-
-def coef_table(pipe: Pipeline, feature_names, top: int = 5) -> pd.DataFrame:
-    """Top predictors per label of a fitted build_sparse_logreg() pipeline.
-
-    odds_ratio = multiplier on the odds of the label per +1 std of the feature.
-    """
-    clf = pipe.named_steps["clf"]
-    rows = []
-    for label in clf.classes_:
-        coef = pd.Series(clf.models_[label].coef_[0], index=list(feature_names))
-        nz = coef[coef != 0]
-        for feat, c in nz.reindex(nz.abs().sort_values(ascending=False).index)[:top].items():
-            rows.append({"label": label, "C": clf.C_[label], "n_predictors": len(nz),
-                         "feature": feat, "coef": round(c, 3), "odds_ratio": round(float(np.exp(c)), 2)})
-    return pd.DataFrame(rows)
+    return SparseLevelModel(levels=ALL_LABELS)
 
 
 def build_hgb() -> HistGradientBoostingClassifier:
