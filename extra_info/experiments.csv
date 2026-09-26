@@ -25,3 +25,4 @@ time,note,logreg,hgb,rule,cv_logreg,cv_hgb,c_detect,c_nextdue,c_none_active,c_fa
 2026-09-26T17:42:24,31 one model only: evaluate/make_submission simplified (no change expected),,,,,,0.690,0.472,0.836,1.754,,,,0.5127
 2026-09-26T17:58:02,32 restructure: model/ features/ pipeline/ (no change expected),,,,,,0.690,0.472,0.836,1.754,,,,0.5127
 2026-09-26T18:04:37,33 train on labelled train clients only (no pseudo-labels); score on valid,,,,,,0.690,0.472,0.836,1.754,,,0.5036,
+2026-09-26T18:25:33,34 predict_proba rows sum to 1 (no change expected),,,,,,0.690,0.472,0.836,1.754,,,0.5036,
