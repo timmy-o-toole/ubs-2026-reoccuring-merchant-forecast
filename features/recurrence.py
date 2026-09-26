@@ -63,6 +63,7 @@ def _cluster_by_amount(group: pd.DataFrame) -> list[pd.DataFrame]:
     ordered = group.sort_values("amount")
     clusters: list[list[int]] = []
     current_idx: list[int] = []
+    current_amounts: list[float] = []
     running_mean = None
 
     for idx, amount in zip(ordered.index, ordered["amount"]):
@@ -70,12 +71,12 @@ def _cluster_by_amount(group: pd.DataFrame) -> list[pd.DataFrame]:
             tol = max(AMOUNT_ABS_TOL, AMOUNT_REL_TOL * running_mean)
             if amount - running_mean > tol:
                 clusters.append(current_idx)
-                current_idx = []
+                current_idx, current_amounts = [], []
                 running_mean = None
 
         current_idx.append(idx)
-        cluster_amounts = ordered.loc[current_idx, "amount"]
-        running_mean = cluster_amounts.mean()
+        current_amounts.append(amount)
+        running_mean = np.mean(current_amounts)
 
     if current_idx:
         clusters.append(current_idx)
