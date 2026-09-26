@@ -1,0 +1,9 @@
+setup,model,valid_macro_f1,fit_seconds
+per label,"SparseLevels, L1 LogReg (ours)",0.5036,6.5
+per label,RF,0.491,5.4
+per label,HGB,0.4912,26.2
+per label,XGBoost,0.4837,4.9
+global,LogReg,0.4889,0.3
+global,RF,0.4799,0.7
+global,HGB,0.4823,24.6
+global,XGBoost,0.4759,4.2

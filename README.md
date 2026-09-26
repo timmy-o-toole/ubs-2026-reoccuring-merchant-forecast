@@ -90,6 +90,29 @@ gym subscription (×1.8)*.
 **Macro-F1 0.504** on the validation set (1,000 clients the model has never seen).
 Training data: only the 2,000 labelled train clients.
 
+### Reference: other model types on the same data
+
+Same 103 features, trained on the 2,000 train clients, macro-F1 on valid.
+*Per label* = one yes/no model per label, highest probability wins (like
+SparseLevels); *global* = one multiclass model. Fit time = training only, on a
+16-core laptop.
+
+| Setup | Model | Macro-F1 (valid) | Fit time |
+|---|---|---|---|
+| per label | **SparseLevels, L1 logistic regression (ours)** | **0.504** | 6.5 s |
+| per label | Random forest | 0.491 | 5.4 s |
+| per label | Gradient boosting (HGB) | 0.491 | 26.2 s |
+| per label | XGBoost | 0.484 | 4.9 s |
+| global | Logistic regression | 0.489 | 0.3 s |
+| global | Random forest | 0.480 | 0.7 s |
+| global | Gradient boosting (HGB) | 0.482 | 24.6 s |
+| global | XGBoost | 0.476 | 4.2 s |
+
+SparseLevels is the most accurate here and fast enough; the tree models are
+not tuned and differences below ~0.01-0.02 are within noise. The SparseLevels
+time includes its own penalty search per label. Reproduce with
+`py -3.10 extra_info/benchmark_models.py` (needs `xgboost`).
+
 ## Repository: three independent parts
 
 ```
@@ -97,7 +120,7 @@ features/   raw transactions (a table) -> one feature row per client
 model/      the model: SparseLevels, one sparse logistic regression per level (L1 or elastic net), generic
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
-extra_info/ experiment log, verified interpretations, coefficients per label
+extra_info/ experiment log, model benchmark, verified interpretations, coefficients per label
 ```
 
 `features/` and `model/` never read files and know nothing about our data
