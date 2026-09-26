@@ -101,16 +101,14 @@ SparseLevels); *global* = one multiclass model. Fit time = training only, on a
 |---|---|---|---|
 | per label | **SparseLevels, L1 logistic regression (ours)** | **0.504** | 6.5 s |
 | per label | Gradient boosting (HGB) | 0.491 | 26.2 s |
-| per label | XGBoost | 0.484 | 4.9 s |
 | global | Logistic regression | 0.489 | 0.3 s |
 | global | Gradient boosting (HGB) | 0.482 | 24.6 s |
-| global | XGBoost | 0.476 | 4.2 s |
 
 SparseLevels combines the best macro-F1 with a short training time and
 readable coefficients per label; the boosting models are black boxes. The
 boosting models are not tuned, and differences below ~0.01-0.02 are within
 noise. The SparseLevels time includes its own penalty search per label.
-Reproduce with `py -3.10 extra_info/benchmark_models.py` (needs `xgboost`).
+Reproduce with `py -3.10 extra_info/benchmark_models.py`.
 
 ## Repository: three independent parts
 
