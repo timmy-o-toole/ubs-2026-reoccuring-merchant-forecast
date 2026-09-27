@@ -8,7 +8,7 @@ Valid macro-F1: **0.4945** (fit on train only).
 How to read the numbers:
 - **×k per SD**: one standard deviation more of a feature multiplies the odds of *that* label (vs all other labels) by k. ×1 = no effect, above 1 = more likely, below 1 = less likely.
 - **Raw data**: label rates computed directly from the 2,000 training clients, without the model.
-- **Status**: ✅ = re-computed independently and confirmed (`scratchpad/interp/verify.py`, 27 checks). Where a first draft was wrong or imprecise, the corrected statement is shown and marked ✏️.
+- **Status**: ✅ = re-computed independently from the data and confirmed (27 checks). Where a first draft was wrong or imprecise, the corrected statement is shown and marked ✏️.
 
 ---
 

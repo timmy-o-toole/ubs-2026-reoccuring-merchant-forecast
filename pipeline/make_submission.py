@@ -1,7 +1,7 @@
 """Write the test submission.
 
-    py -3.10 -m pipeline.make_submission             # -> data/submission_final.csv
-    py -3.10 -m pipeline.make_submission --suffix x  # -> data/submission_x.csv
+    python -m pipeline.make_submission             # -> data/submission_final.csv
+    python -m pipeline.make_submission --suffix x  # -> data/submission_x.csv
 
 The model is trained only on the labelled train clients (never on valid).
 Its valid macro-F1 is printed first, then the same model predicts the test clients.

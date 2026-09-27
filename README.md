@@ -122,11 +122,11 @@ features/   raw transactions (a table) -> one feature row per client
 model/      the model: SparseLevels, one sparse logistic regression per level (L1 or elastic net), generic
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
-extra_info/ experiment log, model benchmark, verified interpretations, coefficients per label
+extra_info/ experiment log, verified interpretations, coefficients per label
 ```
 
-`features/` and `model/` never read files and know nothing about our data
-paths; only `pipeline/` does. So you can reuse them for a similar task.
+`features/` and `model/` take tables and know nothing about our data paths;
+only `pipeline/` does. So you can reuse them for a similar task.
 
 ## Use it on similar data
 
@@ -162,16 +162,16 @@ model.explain(X_new.iloc[[0]])             # why this row got its prediction
 Options: `Cs=(...)` candidate penalty strengths (one value = fixed penalty),
 `levels=[...]` fixed order of the levels, `penalty="elasticnet"` with `l1_ratio`
 as an optional alternative to L1 (not used in our final model).
-`py model/sparse_levels.py` runs a small demo. The file is self-contained
+`python model/sparse_levels.py` runs a small demo. The file is self-contained
 (numpy, pandas, scikit-learn), so you can also copy it on its own.
 
 ## Run our pipeline
 
 ```bash
 pip install numpy pandas "scikit-learn>=1.0"   # Python >= 3.10
-unzip data/dataset.zip -d data/
-py -3.10 -m pipeline.evaluate "my run"         # train, score on validation, log
-py -3.10 -m pipeline.make_submission           # -> data/submission_final.csv
+unzip -j data/dataset.zip -d data/            # challenge files directly into data/
+python -m pipeline.evaluate "my run"           # train, score on validation, log
+python -m pipeline.make_submission             # -> data/submission_final.csv
 ```
 
 Challenge data and task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swiss-ai-Weeks/ubs-2026) (Apache 2.0).

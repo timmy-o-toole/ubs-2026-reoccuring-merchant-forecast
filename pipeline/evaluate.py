@@ -1,6 +1,6 @@
 """Train the model, score it on the validation set and log the result.
 
-    py -3.10 -m pipeline.evaluate "short description of the change"
+    python -m pipeline.evaluate "short description of the change"
 
 The model is trained only on the labelled train clients (never on valid).
 Prints macro-F1, per-label F1 and the confusion matrix on valid, and appends
