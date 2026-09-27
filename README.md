@@ -6,9 +6,9 @@ in the 90 days after `2026-01-01`:
 Metric: macro-F1 over the 8 labels.
 
 **Our idea:** find the right features, keep the model lean, make every
-forecast explainable. We call the model **SparseLevels**: one sparse
-logistic regression per level (L1 or elastic net). Here the levels are the 8
-labels and we use L1 (lasso).
+forecast explainable. We call the model **SparseLevels**: one sparse (L1,
+lasso) logistic regression per label. The class itself works for any levels
+(see *Use it on similar data*).
 
 ## Method at a glance
 
@@ -75,9 +75,8 @@ but the status block carries much of the same information. Differences below
 ~1-2 points are within noise.
 
 ### 2 · SparseLevels: one sparse logistic regression per label
-Each of the 8 labels gets its own yes/no model ("is it gym?"). A sparse
-penalty sets unhelpful coefficients to zero; we use L1 (lasso), elastic net is
-the optional alternative. So each label keeps its own
+Each of the 8 labels gets its own yes/no model ("is it gym?"). An L1 (lasso)
+penalty sets unhelpful coefficients to zero, so each label keeps its own
 feature list (between 23 features for music and 80 for `none`, out of
 103). Each label picks its own penalty strength by
 cross-validation.
@@ -88,44 +87,34 @@ has a short list of coefficients, each prediction can be explained, e.g.
 *gym is likely because of recent gym payments (odds ×2.5) and a long-running
 gym subscription (×1.8)*.
 
+**What the model learned.** For every family the strongest signal is recent
+payments to that family (odds ×1.88 to ×2.82 per SD), usually followed by the
+age of that subscription and whether it still runs ([all coefficients](extra_info/COEFFICIENTS.md)).
+
 ## Result
 
 **Macro-F1 0.504** on the validation set (1,000 clients the model has never seen).
 Training data: only the 2,000 labelled train clients.
+Everything we tried (30 experiments, what helped and what did not) is in the
+[experiment log](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/cdd470f/extra_info/EXPERIMENT_LOG.md) in the git history.
 
-### Reference: other model types on the same data
+## Run our pipeline
 
-Same 103 features, trained on the 2,000 train clients, macro-F1 on valid.
-*Per label* = one yes/no model per label (like SparseLevels); *global* = one
-multiclass model. Time = training + prediction on a laptop CPU. Newer library
-versions than above, hence 0.505 instead of 0.504.
+```bash
+pip install numpy pandas "scikit-learn>=1.0"   # Python >= 3.10
+unzip -j data/dataset.zip -d data/            # challenge files directly into data/
+python -m pipeline.evaluate "my run"           # train, score on valid, log to extra_info/experiments.csv
+python -m pipeline.make_submission             # -> data/submission_final.csv
+```
 
-| Setup | Model | Macro-F1 (valid) | Time |
-|---|---|---|---|
-| per label | **SparseLevels, L1 logistic regression (ours)** | **0.505** | **7 s** |
-| per label | Gradient boosting (HGB) | 0.480 | 4 s |
-| per label | Explainable boosting (EBM) | 0.528 | 555 s |
-| global | Logistic regression | 0.489 | 0.1 s |
-| global | Gradient boosting (HGB) | 0.482 | 5 s |
-| global | Explainable boosting (EBM) | 0.519 | 200 s |
-| global | TabPFN v2 (tabular foundation model) | 0.491 | 574 s |
-
-**SparseLevels is the best-performing model under 10 seconds, and it stays
-interpretable: a few readable coefficients per label.** EBM leads on valid but
-not in 5-fold cross-validation on train (0.505 vs. 0.510) and is 30-80x
-slower. Other models use default settings; differences below ~0.01-0.02 are
-within noise. The reference models are one-liners, commented out in
-`build_model` in `pipeline/evaluate.py`; the full benchmark script is in the
-[git history](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/10279ee/extra_info/benchmark_models.py).
-
-## Repository: three independent parts
+## Repository layout
 
 ```
 features/   raw transactions (a table) -> one feature row per client
-model/      the model: SparseLevels, one sparse logistic regression per level (L1 or elastic net), generic
+model/      the model: SparseLevels, one sparse (L1, lasso) logistic regression per level, generic
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
-extra_info/ experiment log, verified interpretations, coefficients per label
+extra_info/ coefficients per label
 dashboard_sample/  further application: client risk monitor, built on features/ and pipeline/
 ```
 
@@ -169,14 +158,30 @@ as an optional alternative to L1 (not used in our final model).
 `python model/sparse_levels.py` runs a small demo. The file is self-contained
 (numpy, pandas, scikit-learn), so you can also copy it on its own.
 
-## Run our pipeline
+## Benchmark: other model types
 
-```bash
-pip install numpy pandas "scikit-learn>=1.0"   # Python >= 3.10
-unzip -j data/dataset.zip -d data/            # challenge files directly into data/
-python -m pipeline.evaluate "my run"           # train, score on validation, log
-python -m pipeline.make_submission             # -> data/submission_final.csv
-```
+Same 103 features, trained on the 2,000 train clients, macro-F1 on valid.
+*Per label* = one yes/no model per label (like SparseLevels); *global* = one
+multiclass model. Time = training + prediction on a laptop CPU. Run with newer
+library versions than the final model, hence 0.505 instead of 0.504.
+
+| Setup | Model | Macro-F1 (valid) | Time |
+|---|---|---|---|
+| per label | **SparseLevels, L1 logistic regression (ours)** | **0.505** | **7 s** |
+| per label | Gradient boosting (HGB) | 0.480 | 4 s |
+| per label | Explainable boosting (EBM) | 0.528 | 555 s |
+| global | Logistic regression | 0.489 | 0.1 s |
+| global | Gradient boosting (HGB) | 0.482 | 5 s |
+| global | Explainable boosting (EBM) | 0.519 | 200 s |
+| global | TabPFN v2 (tabular foundation model) | 0.491 | 574 s |
+
+**SparseLevels is the best-performing model under 10 seconds, and it stays
+interpretable: a few readable coefficients per label.** EBM leads on valid but
+not in 5-fold cross-validation on train (EBM 0.505 vs. SparseLevels 0.510) and
+is 30-80x slower. Other models use default settings; differences below
+~0.01-0.02 are within noise. The reference models are one-liners, commented out in
+`build_model` in `pipeline/evaluate.py`; the full benchmark script is in the
+[git history](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/10279ee/extra_info/benchmark_models.py).
 
 ## Further application: client risk monitor
 

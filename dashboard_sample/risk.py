@@ -59,7 +59,8 @@ def _outcomes(streams: pd.DataFrame, by_client: dict, t: pd.Timestamp) -> pd.Dat
         arrival = pd.NaT
         cand = by_client.get(r.client_id)
         if cand is not None:
-            m = ((cand["amount"] - r.mean_amount).abs() <= max(AMOUNT_ABS_TOL, AMOUNT_REL_TOL * r.mean_amount))                 & (cand["timestamp"] > r.last_date + gap / 2)
+            m = (((cand["amount"] - r.mean_amount).abs() <= max(AMOUNT_ABS_TOL, AMOUNT_REL_TOL * r.mean_amount))
+                 & (cand["timestamp"] > r.last_date + gap / 2))
             if r.category is not None:   # rotating descriptions often carry no category: accept those
                 m &= (cand["category"] == r.category) | cand["category"].isna()
             if m.any():

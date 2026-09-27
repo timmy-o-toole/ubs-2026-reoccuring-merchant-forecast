@@ -25,7 +25,7 @@ LOG_PATH = "extra_info/experiments.csv"
 def build_model() -> SparseLevels:
     """SparseLevels for our task: one sparse logistic regression per label, L1 (lasso) penalty."""
     return SparseLevels(levels=LABELS)
-    # Reference models from the README table (default settings; per-label rows = one yes/no
+    # Reference models from the README benchmark (default settings; per-label rows = one yes/no
     # model per label; boosting models fit with balanced sample weights):
     # make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LogisticRegression(max_iter=2000, class_weight="balanced"))
     # HistGradientBoostingClassifier(random_state=0)
