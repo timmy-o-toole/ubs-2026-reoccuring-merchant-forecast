@@ -93,22 +93,26 @@ Training data: only the 2,000 labelled train clients.
 ### Reference: other model types on the same data
 
 Same 103 features, trained on the 2,000 train clients, macro-F1 on valid.
-*Per label* = one yes/no model per label, highest probability wins (like
-SparseLevels); *global* = one multiclass model. Fit time = training only, on a
-16-core laptop.
+*Per label* = one yes/no model per label (like SparseLevels); *global* = one
+multiclass model. Time = training + prediction on a laptop CPU. Newer library
+versions than above, hence 0.505 instead of 0.504.
 
-| Setup | Model | Macro-F1 (valid) | Fit time |
+| Setup | Model | Macro-F1 (valid) | Time |
 |---|---|---|---|
-| per label | **SparseLevels, L1 logistic regression (ours)** | **0.504** | 6.5 s |
-| per label | Gradient boosting (HGB) | 0.491 | 26.2 s |
-| global | Logistic regression | 0.489 | 0.3 s |
-| global | Gradient boosting (HGB) | 0.482 | 24.6 s |
+| per label | **SparseLevels, L1 logistic regression (ours)** | **0.505** | **7 s** |
+| per label | Gradient boosting (HGB) | 0.480 | 4 s |
+| per label | Explainable boosting (EBM) | 0.528 | 555 s |
+| global | Logistic regression | 0.489 | 0.1 s |
+| global | Gradient boosting (HGB) | 0.482 | 5 s |
+| global | Explainable boosting (EBM) | 0.519 | 200 s |
+| global | TabPFN v2 (tabular foundation model) | 0.491 | 574 s |
 
-SparseLevels combines the best macro-F1 with a short training time and
-readable coefficients per label; the boosting models are black boxes. The
-boosting models are not tuned, and differences below ~0.01-0.02 are within
-noise. The SparseLevels time includes its own penalty search per label.
-Reproduce with `py -3.10 extra_info/benchmark_models.py`.
+**SparseLevels is the best-performing model under 10 seconds, and it stays
+interpretable: a few readable coefficients per label.** EBM leads on valid but
+not in 5-fold cross-validation on train (0.505 vs. 0.510) and is 30-80x
+slower. Other models use default settings; differences below ~0.01-0.02 are
+within noise. Reproduce with `python extra_info/benchmark_models.py` (needs
+`interpret-core` and `tabpfn`).
 
 ## Repository: three independent parts
 
