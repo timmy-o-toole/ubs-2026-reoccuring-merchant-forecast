@@ -23,21 +23,18 @@ The risk model reuses the main model's features and explanation style for a diff
 
 | | Main model | Risk model |
 |---|---|---|
-| Features | 103 lean features | the same 103 features |
-| Model | 8 yes/no L1 logistic regressions, one per label ("is it insurance?") | one L1 logistic regression, two linked yes/no steps: "will a payment slip?" and "if it slips, is it missed?" |
+| Features | 103 lean features | the same 103 features (L1 keeps 91) |
+| Model | 8 yes/no L1 logistic regressions, one per label ("is it insurance?") | one L1 logistic regression with two linked yes/no steps (see below) |
 | Explanation | value × beta per feature | the same value × beta, summed into 6 groups |
 | Target | next category (challenge labels) | on time / late / missed (read from the transactions) |
-
-The main change is the **target**. The model is a close cousin: one L1 logistic regression whose two
-linked yes/no steps share one set of betas, so its betas read the same way as the main model's
-coefficients.
 
 ## The model in short
 
 1. **Snapshots.** Every two weeks we rebuild each client's features using only the data up to that day
    (the main model does this once, at the cutoff).
-2. **New target.** We take the recurring payments (subscriptions) that should come in the next 30 days
-   and check what happened: **on time**, **late** (up to one billing cycle late) or **missed** (did not come).
+2. **New target.** We take the recurring payments (subscriptions) that are due in the next 30 days
+   (or up to 5 days overdue) and check what happened: **on time**, **late** (up to one billing cycle
+   late) or **missed** (did not come).
 3. **Model.** One sparse L1 logistic regression (a continuation-ratio logit, fitted on stacked rows)
    for two linked yes/no questions: *will a payment slip?* and *if it slips, is it missed?* Both
    share one set of betas. Unlike the main model: features are clipped to the 0.5-99.5 percentile
@@ -59,3 +56,7 @@ trained on the train clients only).
 
 Run from the repo root after unzipping the data (see the main README). It uses `features/` and
 `pipeline/` unchanged. The first run takes ~30-40 min; later runs take ~3 min.
+
+`risk.py` builds the two-weekly snapshots and their on-time/late/missed outcomes (cached in `data/processed/`).
+`risk_model.py` is the risk model (`python -m dashboard_sample.risk_model` only prints its evaluation).
+`build.py` fills `template.html` with the data and writes `index.html`.

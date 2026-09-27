@@ -4,11 +4,12 @@
 in the 90 days after `2026-01-01`:
 `cloud, gym, insurance, mobile, music, software, streaming` or `none`.
 Metric: macro-F1 over the 8 labels.
+Challenge, data and full task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swiss-ai-Weeks/ubs-2026) (Apache 2.0).
 
 **Our idea:** find the right features, keep the model lean, make every
 forecast explainable. We call the model **SparseLevels**: one sparse (L1,
-lasso) logistic regression per label. The class itself works for any levels
-(see *Use it on similar data*).
+lasso) logistic regression per label. The model code works for any set of
+labels ("levels": classes, clusters, segments; see *Use it on similar data*).
 
 ## Method at a glance
 
@@ -66,7 +67,7 @@ subscription is due first"*, *"does the client travel"*.
 | Subscription status & timing | still live? overdue? due first? short trial? | 5.1 |
 | Habits | recent payments per family (last 90 days) | 0.5 |
 | Subscription history | age, number of charges, amount per family | 1.2 |
-| Portfolio changes & refunds | families gained or dropped, refunds | 3.1 |
+| Portfolio changes & refunds | families ever vs. last 90 days, dropped or cooling families, refunds | 3.1 |
 | Account behaviour | payment mix, top-ups, merchant variety, travel | 2.0 |
 
 \*macro-F1 points lost on valid when the block is removed from the final
@@ -95,8 +96,6 @@ age of that subscription and whether it still runs ([all coefficients](extra_inf
 
 **Macro-F1 0.504** on the validation set (1,000 clients the model has never seen).
 Training data: only the 2,000 labelled train clients.
-Everything we tried (30 experiments, what helped and what did not) is in the
-[experiment log](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/cdd470f/extra_info/EXPERIMENT_LOG.md) in the git history.
 
 ## Run our pipeline
 
@@ -106,6 +105,9 @@ unzip -j data/dataset.zip -d data/            # challenge files directly into da
 python -m pipeline.evaluate "my run"           # train, score on valid, log to extra_info/experiments.csv
 python -m pipeline.make_submission             # -> data/submission_final.csv
 ```
+
+Expected: `model macro-F1 (valid) = 0.5036` with scikit-learn 1.0.2 (newer versions: about 0.505, see *Benchmark*).
+`unlabeled_pretrain_transactions.jsonl` is not used.
 
 ## Repository layout
 
@@ -139,6 +141,9 @@ model = fit_sparse_levels(X, y)                           # y: label per client 
 model.predict(X)
 ```
 
+The subscription tagging in `features/category_map.py` (keywords, MCC codes, non-subscription phrases,
+the 7 families in `TARGET_CATEGORIES`) is tuned to this challenge's merchant descriptions; adapt it for your data.
+
 **Any feature table -> any levels.** The model alone works on any table and
 any levels (class labels, cluster ids, customer segments):
 
@@ -152,7 +157,7 @@ model.coefficients(top=5)                  # the features each level uses (odds 
 model.explain(X_new.iloc[[0]])             # why this row got its prediction
 ```
 
-Options: `Cs=(...)` candidate penalty strengths (one value = fixed penalty),
+Options: `Cs=(...)` candidate values of C, the inverse penalty strength (smaller C = sparser; one value = fixed C),
 `levels=[...]` fixed order of the levels, `penalty="elasticnet"` with `l1_ratio`
 as an optional alternative to L1 (not used in our final model).
 `python model/sparse_levels.py` runs a small demo. The file is self-contained
@@ -190,5 +195,3 @@ client's next recurring payments arrive on time, late, or not at all? One sparse
 L1 model gives each client a risk index (0-100) over time, and shows which
 features moved it. Open `dashboard_sample/index.html`; details in its
 [README](dashboard_sample/README.md).
-
-Challenge data and task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swiss-ai-Weeks/ubs-2026) (Apache 2.0).
