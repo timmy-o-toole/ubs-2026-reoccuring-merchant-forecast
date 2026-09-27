@@ -25,6 +25,12 @@ LOG_PATH = "extra_info/experiments.csv"
 def build_model() -> SparseLevels:
     """SparseLevels for our task: one sparse logistic regression per label, L1 (lasso) penalty."""
     return SparseLevels(levels=LABELS)
+    # Reference models from the README table (default settings; per-label rows = one yes/no
+    # model per label; boosting models fit with balanced sample weights):
+    # make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LogisticRegression(max_iter=2000, class_weight="balanced"))
+    # HistGradientBoostingClassifier(random_state=0)
+    # ExplainableBoostingClassifier(random_state=0)  # pip install interpret-core
+    # TabPFNClassifier.create_default_for_version(ModelVersion.V2, device="cpu", balance_probabilities=True)  # pip install tabpfn
 
 
 def macro_f1(y_true, y_pred) -> float:

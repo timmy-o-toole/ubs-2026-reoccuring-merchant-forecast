@@ -1,8 +1,0 @@
-setup,model,valid_macro_f1,seconds
-per label,"SparseLevels, L1 LogReg (ours)",0.5048,7.1
-per label,HGB,0.4798,4.0
-per label,EBM,0.5284,555.2
-global,LogReg,0.4892,0.1
-global,HGB,0.4815,4.5
-global,EBM,0.5195,200.0
-global,TabPFN,0.4907,573.8

@@ -111,8 +111,9 @@ versions than above, hence 0.505 instead of 0.504.
 interpretable: a few readable coefficients per label.** EBM leads on valid but
 not in 5-fold cross-validation on train (0.505 vs. 0.510) and is 30-80x
 slower. Other models use default settings; differences below ~0.01-0.02 are
-within noise. Reproduce with `python extra_info/benchmark_models.py` (needs
-`interpret-core` and `tabpfn`).
+within noise. The reference models are one-liners, commented out in
+`build_model` in `pipeline/evaluate.py`; the full benchmark script is in the
+[git history](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/10279ee/extra_info/benchmark_models.py).
 
 ## Repository: three independent parts
 
