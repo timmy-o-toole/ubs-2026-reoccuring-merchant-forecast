@@ -161,7 +161,7 @@ const sigm = v => 1 / (1 + Math.exp(-v));
 const dateLbl = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const OUT = ['on time', 'late', 'missed'];
 
-// ---- model (same math as src/risk_model.py) ----------------------------
+// ---- model (same math as dashboard_sample/risk_model.py) --------------
 function contrib(x) {   // clip to train range, impute median, standardise, times beta
   return x.map((v, j) => { const f = F[j]; const c = v === null ? f.median : Math.min(f.hi, Math.max(f.lo, v)); return (c - f.mean) / f.scale * D.beta[j]; });
 }

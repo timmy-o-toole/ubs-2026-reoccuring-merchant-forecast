@@ -1,6 +1,6 @@
 """SparseLevels: one sparse logistic regression per level (L1 or elastic net).
 
-    from model import fit_sparse_levels      # or copy this file and: from sparse_levels import ...
+    from code import fit_sparse_levels       # or copy this file and: from model import ...
 
     model = fit_sparse_levels(X, y)          # X: feature table, y: a level per row
     model.predict(X_new)                     # predicted level per row
@@ -52,8 +52,9 @@ class SparseLevels(BaseEstimator, ClassifierMixin):
     l1_ratio : float
         Only for "elasticnet": share of L1 in the penalty (1.0 = pure lasso).
     Cs : sequence of float
-        Candidate penalty strengths (smaller = sparser). Each level picks its
-        own C by cross-validation; a single value means a fixed penalty.
+        Candidate values of C, the inverse penalty strength (smaller C =
+        stronger penalty = sparser). Each level picks its own C by
+        cross-validation; a single value means a fixed penalty.
     cv : int
         Folds of the inner cross-validation that picks C per level.
     class_weight : "balanced" or None

@@ -1,7 +1,6 @@
 # Client risk monitor
 
-> **Status: prototype, vibe coded.** The method has not been reviewed or checked yet.
-> Treat the numbers as a first draft, not as results.
+> **Status: prototype.** The risk method has not been independently reviewed; treat the numbers as a first draft.
 
 ## Goal
 
@@ -17,71 +16,30 @@ It shows the 1,000 validation clients; none of them is used to fit any model.
 
 ## How it relates to the main model
 
-The risk model is **the main model's recipe with a different question**. Nothing else is new.
+The risk model reuses the main model's features and explanation style for a different question.
 
 1. **Main model** asks: **what** does the client pay next? (e.g. *insurance*)
 2. **Risk model** asks: **will** the next payments come on time? (e.g. *risk 60: likely late or missed*)
 
-```text
-                                                 +----------------+
-                                                 | Transactions   |
-                                                 +----------------+
-                                                          |
-                                                          v
-                                             +------------------------+
-                                             | Client features        |
-                                             | 103 lean features      |
-                                             | (shared)               |
-                                             +------------------------+
-                                                          |
-                                 +------------------------+------------------------+
-                                 |                                                 |
-                  PATH 1: MAIN MODEL (challenge)                    PATH 2: RISK MODEL (dashboard)
-                                 |  features                                       |  features
-                                 v                                                 v
-+----------------+   +-----------------------+    +----------------+   +-----------------------+
-| TARGET         |   | MODEL                 |    | TARGET         |   | MODEL                 |
-| next category  |-->| 8 x L1 logistic       |    | on time /      |-->| 1 x L1 logistic       |
-| (8 challenge   |   | regressions, one      |    | late / missed  |   | regression:           |
-|  labels)       |   | per category:         |    | (from the      |   | "will a payment       |
-|                |   | "is it insurance?"    |    |  transactions) |   |  slip? if so,         |
-+----------------+   |                       |    +----------------+   |  is it missed?"       |
-                     +-----------------------+                         +-----------------------+
-                                 |                                                 |
-                                 v                                                 v
-                     +-----------------------+                         +-----------------------+
-                     | OUTPUT                |                         | OUTPUT                |
-                     | next category         |                         | risk index 0-100      |
-                     | e.g. insurance        |                         | e.g. 60               |
-                     +-----------------------+                         +-----------------------+
-                                 |                                                 |
-                                 +------------------------+------------------------+
-                                                          v
-                                           +----------------------------+
-                                           | DASHBOARD                  |
-                                           | risk over time + drivers   |
-                                           | (value x beta)             |
-                                           +----------------------------+
-```
-
 | | Main model | Risk model |
 |---|---|---|
-| Features | 103 lean features | the same 103 features |
-| Model | yes/no L1 logistic regressions ("is it insurance?") | the same kind: "will a payment slip?" and "if it slips, is it missed?" |
+| Features | 103 lean features | the same 103 features (L1 keeps 91) |
+| Model | 8 yes/no L1 logistic regressions, one per label ("is it insurance?") | one L1 logistic regression with two linked yes/no steps (see below) |
 | Explanation | value × beta per feature | the same value × beta, summed into 6 groups |
 | Target | next category (challenge labels) | on time / late / missed (read from the transactions) |
-
-So the only real change is the **target**. Because the betas work the same way, anyone who can read
-the main model's coefficients can read the risk drivers.
 
 ## The model in short
 
 1. **Snapshots.** Every two weeks we rebuild each client's features using only the data up to that day
    (the main model does this once, at the cutoff).
-2. **New target.** We take the recurring payments (subscriptions) that should come in the next 30 days
-   and check what happened: **on time**, **late** (up to one billing cycle late) or **missed** (did not come).
-3. **Model.** The same sparse L1 logistic regression as the main model, used for two linked yes/no
-   questions: *will a payment slip?* and *if it slips, is it missed?* Both share one set of betas.
+2. **New target.** We take the recurring payments (subscriptions) that are due in the next 30 days
+   (or up to 5 days overdue) and check what happened: **on time**, **late** (up to one billing cycle
+   late) or **missed** (did not come).
+3. **Model.** One sparse L1 logistic regression (a continuation-ratio logit, fitted on stacked rows)
+   for two linked yes/no questions: *will a payment slip?* and *if it slips, is it missed?* Both
+   share one set of betas. Unlike the main model: features are clipped to the 0.5-99.5 percentile
+   range before standardising, there are no class weights, and one penalty strength is chosen by
+   cross-validated log-loss (folds grouped by client).
 4. **Risk index** = 50 × P(late) + 100 × P(missed). So 0 = surely on time, 50 = surely late,
    100 = surely missed.
 5. **Why it moved.** As in the main model, each feature adds *feature value × beta* to the score.
@@ -96,5 +54,9 @@ trained on the train clients only).
 
     python -m dashboard_sample.build
 
-Run from the repo root after unzipping the data (see the main README). It uses `features/` and
+Run from the repo root after unzipping the data (see the main README). It uses `code/` and
 `pipeline/` unchanged. The first run takes ~30-40 min; later runs take ~3 min.
+
+`risk.py` builds the two-weekly snapshots and their on-time/late/missed outcomes (cached in `data/processed/`).
+`risk_model.py` is the risk model (`python -m dashboard_sample.risk_model` only prints its evaluation).
+`build.py` fills `template.html` with the data and writes `index.html`.

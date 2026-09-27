@@ -1,24 +1,19 @@
-"""Builds the client-level feature table used for modeling.
+"""Client feature table: one row per client from the transactions passed in.
 
-One row per client, built purely from transactions up to the cutoff date
-(no leakage). Combines three groups of signal:
+Nothing is filtered by date here, so pass only each client's history before
+the cutoff. Feature blocks:
 
-  1. Per-category state, from recurring streams (features.recurrence): does the
-     client already have an active recurring subscription in each of the 7
-     target categories, and what does that stream look like (recency,
-     count, amount, cadence regularity).
-  2. Early-adoption signal: transactions in a category within the last 90
-     days that DON'T yet meet the >=2-occurrence bar to count as
-     "recurring". Important because ~47% of non-'none' targets are brand
-     new categories the client didn't have before cutoff (see recurrence.py
-     write-up) - a single recent transaction in a category can be the only
-     visible precursor of a subscription that will recur in the 90-day
-     prediction window.
-  3. General financial behavior: tenure, transaction mix, income
-     regularity, adoption pace - context features that don't tie to one
-     category but describe the client's overall situation (e.g. clients
-     with many active categories are less likely to add another - the
-     "saturation" effect found during exploration).
+  - account behaviour: client age, transaction mix, amounts, top-ups,
+    merchant variety;
+  - per-family stream state, from the recurring streams (features_recurrence.py):
+    age, number of charges, amount, still live, due first, billing day;
+  - recent tagged transactions per family (last 90 days);
+  - lateness, portfolio and refund blocks;
+  - client-level summaries (one number per client);
+  - travel.
+
+build_features returns 132 feature columns (the "full" set);
+select_features(..., "lean") keeps the 103 the model uses.
 """
 
 from __future__ import annotations
@@ -26,19 +21,19 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from features.category_map import TARGET_CATEGORIES
-from features.recurrence import detect_streams, load_transactions, tag_transactions
+from code.features_category_map import TARGET_CATEGORIES
+from code.features_recurrence import detect_streams, load_transactions, tag_transactions
 
 RECENT_WINDOW_DAYS = 90
 # A stream counts as live if its next charge is overdue by at most this many days.
 LIVE_MAX_OVER_DAYS = 5
-# D5 story-feature blocks (19 columns): lateness (8), portfolio (3), refund (8).
+# Story-feature blocks (19 columns): lateness (8), portfolio (3), refund (8).
 STORY_BLOCKS = ("late_bro", "portfolio_bro", "refund_bro")
 
-# Feature sets (see README "Feature sets"). "full" = every feature we built (no
-# feature gets lost). "lean" = the fewer-features model: 21 redundant columns
-# removed (same valid score, better train CV) and, of the client-level story
-# features, only cooling_families + dormancy_score kept.
+# Feature sets (see select_features). "full" = all 132 features we build.
+# "lean" = the 103 features of the model: 21 redundant columns removed (same
+# valid score, better train CV) and, of the client-level story features, only
+# cooling_families + dormancy_score kept.
 LEAN_DROP = (
     ["avg_txn_amount", "avg_out_amount", "total_in", "total_out", "net_flow", "n_txns", "n_txns_per_month"]
     + [f"n_streams_{c}" for c in TARGET_CATEGORIES]
@@ -126,9 +121,7 @@ def _category_stream_features(streams: pd.DataFrame, cutoff: pd.Timestamp) -> pd
         .reset_index()
     )
     agg["tenure_days"] = (cutoff - agg["first_date"]).dt.days
-    # Timing (recency, mean gap, days until next due) lives in the live-stream
-    # features (over_days_, first_due_, bill_day_); the raw versions added
-    # nothing on top of them (exp 12, 13).
+    # Timing lives in the live-stream features (over_days_, first_due_, bill_day_).
 
     wide_frames = []
     for cat in TARGET_CATEGORIES:
@@ -157,10 +150,9 @@ def _live_stream_features(streams: pd.DataFrame, cutoff: pd.Timestamp) -> pd.Dat
     """Which streams are still running at the cutoff.
 
     over = days since last charge - mean gap (> 0: next charge is overdue).
-    A stream overdue by more than LIVE_MAX_OVER_DAYS has most likely stopped;
-    days_until_next_due alone can't show that (negative = "due now" or
-    "cancelled months ago"). Streams with only 3-4 charges look like trials
-    that end: those clients are mostly 'none' (train and valid).
+    A stream overdue by more than LIVE_MAX_OVER_DAYS has most likely stopped.
+    Streams with only 3-4 charges look like trials that end: those clients
+    are mostly 'none' (train and valid).
     """
     active = streams[streams["is_recurring"] & streams["category"].notna()].copy()
     active["over"] = (cutoff - active["last_date"]).dt.days - active["mean_gap_days"]
@@ -212,7 +204,7 @@ def _billing_day_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Ti
 
 
 def _story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
-    """D5 story features: three small, explainable blocks.
+    """Story features: three small, explainable blocks.
 
     late_bro:      "Whatever is due now comes next." late_cycles_<fam> =
                    over_days / mean gap, capped to [-1, 3]; 3 = no stream
@@ -267,11 +259,10 @@ def _story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestam
 
 
 def _client_story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
-    """D6 client-level story features: one number per client, each with a one-line story.
+    """Client-level story features: one number per client, each with a one-line story.
 
-    Tested one by one on top of the 120 features: all score-neutral (none a
-    clear gain), so they live in the "full" set; the "lean" set keeps only
-    cooling_families and dormancy_score.
+    None was a clear gain on its own, so they live in the "full" set; the
+    "lean" set keeps only cooling_families and dormancy_score.
     """
     clients = pd.Index(df["client_id"].unique(), name="client_id")
     active = streams[streams["is_recurring"] & streams["category"].notna()].copy()
@@ -314,7 +305,7 @@ def _client_story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.T
 
 
 def _traveller_features(df: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
-    """D7 "the traveller" persona: how often and how recently a client travels.
+    """"The traveller": how often and how recently a client travels.
 
     Hotel (mcc 7011) and ride-share (mcc 4111) spending is a spread-out habit,
     not discrete trips (median 51 days between hotel bookings), so it is

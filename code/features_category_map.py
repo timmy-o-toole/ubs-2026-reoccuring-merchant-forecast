@@ -15,7 +15,7 @@ to be more precise than MCC alone. Auditing the raw data showed:
     between "digital plus", "premium plan", "media streaming", "video
     access" at a near-constant amount) - a fraction of those cycles carry
     no category keyword at all. This can't be resolved per-transaction;
-    see recurrence.py's amount-based clustering, which imputes the
+    see features_recurrence.py's amount-based clustering, which imputes the
     category from sibling transactions in the same recurring stream.
 
 MCC is used only as a fallback for the four "clean" MCCs, where it is
@@ -62,7 +62,7 @@ def classify(mcc: str, description: str) -> str | None:
 
     None means "no keyword evidence and not a clean-mapped mcc" - the
     transaction may still turn out to be part of a recurring subscription
-    stream once merged with same-amount siblings in recurrence.py.
+    stream once merged with same-amount siblings in features_recurrence.py.
     """
     tokens = set(description.split())
 

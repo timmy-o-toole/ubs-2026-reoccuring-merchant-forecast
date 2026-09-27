@@ -7,7 +7,7 @@ subscriptions rotate their description text month to month (e.g.
 "digital plus" -> "premium plan" -> "media streaming" for what is really
 one Netflix-like charge) while staying at a near-constant amount and
 cadence - grouping by literal description or by a single per-transaction
-category label would split or mis-drop those cycles. See category_map.py
+category label would split or mis-drop those cycles. See features_category_map.py
 for the details behind this design.
 
 A stream is flagged as recurring if it has >=2 transactions at a roughly
@@ -25,7 +25,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from features.category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
+from code.features_category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
 
 MIN_GAP_DAYS = 20
 MAX_GAP_DAYS = 45
