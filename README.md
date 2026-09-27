@@ -63,13 +63,16 @@ subscription is due first"*, *"does the client travel"*.
 
 | Feature block | What it captures | Importance* |
 |---|---|---|
-| Subscription status & timing | still live? overdue? due first? short trial? | 22.5 |
-| Habits | recent payments per family (last 90 days) | 13.5 |
-| Subscription history | age, number of charges, amount per family | 4.4 |
-| Portfolio changes & refunds | families gained or dropped, refunds | 3.6 |
-| Account behaviour | payment mix, top-ups, merchant variety, travel | 2.9 |
+| Subscription status & timing | still live? overdue? due first? short trial? | 5.1 |
+| Habits | recent payments per family (last 90 days) | 0.5 |
+| Subscription history | age, number of charges, amount per family | 1.2 |
+| Portfolio changes & refunds | families gained or dropped, refunds | 3.1 |
+| Account behaviour | payment mix, top-ups, merchant variety, travel | 2.0 |
 
-\*macro-F1 points lost when the block is removed.
+\*macro-F1 points lost on valid when the block is removed from the final
+model. Blocks overlap: recent payments are the strongest single predictors,
+but the status block carries much of the same information. Differences below
+~1-2 points are within noise.
 
 ### 2 · SparseLevels: one sparse logistic regression per label
 Each of the 8 labels gets its own yes/no model ("is it gym?"). A sparse

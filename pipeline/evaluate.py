@@ -54,7 +54,7 @@ def main() -> None:
     print("\nconfusion (rows=true, cols=pred):")
     print(pd.DataFrame(confusion_matrix(y_valid, pred, labels=LABELS), index=LABELS, columns=LABELS))
 
-    row = {"time": dt.datetime.now().isoformat(timespec="seconds"), "note": note, "sparse_logreg_lean": f"{score:.4f}"}
+    row = {"time": dt.datetime.now().isoformat(timespec="seconds"), "note": note, "macro_f1": f"{score:.4f}"}
     old = pd.read_csv(LOG_PATH, dtype=str) if os.path.exists(LOG_PATH) else pd.DataFrame(columns=list(row))
     cols = list(old.columns) + [c for c in row if c not in old.columns]
     pd.concat([old, pd.DataFrame([row])], ignore_index=True)[cols].to_csv(LOG_PATH, index=False)
