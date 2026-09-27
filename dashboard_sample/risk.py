@@ -26,9 +26,9 @@ import os
 import numpy as np
 import pandas as pd
 
-import features
-from features import build_features, detect_streams, select_features
-from features.category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES
+import code
+from code import build_features, detect_streams, select_features
+from code.features_category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES
 from pipeline.data import DATA_DIR, read_transactions
 
 SNAPSHOTS = [d.strftime("%Y-%m-%d") for d in pd.date_range("2025-01-15", "2025-12-31", freq="14D")] + ["2026-01-01"]
@@ -105,7 +105,7 @@ def build_snapshots(split: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 def _code_hash() -> str:
     """Hash of the feature code and this file: the cache is rebuilt when either changes."""
     h = hashlib.sha1()
-    for path in sorted(glob.glob(os.path.join(os.path.dirname(features.__file__), "*.py"))) + [__file__]:
+    for path in sorted(glob.glob(os.path.join(os.path.dirname(code.__file__), "features_*.py"))) + [__file__]:
         with open(path, "rb") as f:
             h.update(f.read())
     return h.hexdigest()[:10]

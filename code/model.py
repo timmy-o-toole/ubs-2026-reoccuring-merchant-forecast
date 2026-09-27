@@ -1,6 +1,6 @@
 """SparseLevels: one sparse logistic regression per level (L1 or elastic net).
 
-    from model import fit_sparse_levels      # or copy this file and: from sparse_levels import ...
+    from code import fit_sparse_levels       # or copy this file and: from model import ...
 
     model = fit_sparse_levels(X, y)          # X: feature table, y: a level per row
     model.predict(X_new)                     # predicted level per row

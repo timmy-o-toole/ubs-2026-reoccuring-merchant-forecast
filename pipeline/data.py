@@ -1,8 +1,8 @@
 """Our task's data: file paths, labels, cutoff and the training set.
 
-This is the only place that knows where files live. features/ turns a table
-of transactions into features, model/ fits on a feature table; neither reads
-files by itself.
+This is the only place that knows where files live. code/ turns a table
+of transactions into features and fits the model on a feature table; it
+reads no files by itself.
 
 Training uses only the labelled train clients; the valid clients are only
 used for scoring.
@@ -12,13 +12,13 @@ from __future__ import annotations
 
 import pandas as pd
 
-from features import TARGET_CATEGORIES, build_features, load_transactions, select_features
+from code import TARGET_CATEGORIES, build_features, load_transactions, select_features
 
 DATA_DIR = "data"
 CUTOFF = "2026-01-01"
 LABEL_COL = "target_next_recurring_merchant"
 LABELS = TARGET_CATEGORIES + ["none"]
-FEATURE_SET = "lean"  # 103 features (see features.select_features)
+FEATURE_SET = "lean"  # 103 features (see code.select_features)
 
 
 def read_transactions(split: str) -> pd.DataFrame:

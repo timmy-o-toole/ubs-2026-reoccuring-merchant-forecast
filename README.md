@@ -112,16 +112,19 @@ Expected: `model macro-F1 (valid) = 0.5036` with scikit-learn 1.0.2 (newer versi
 ## Repository layout
 
 ```
-features/   raw transactions (a table) -> one feature row per client
-model/      the model: SparseLevels, one sparse (L1, lasso) logistic regression per level, generic
+code/       features and model, generic:
+  features_category_map.py   transaction -> subscription family tag
+  features_recurrence.py     recurring streams per client
+  features_build.py          raw transactions (a table) -> one feature row per client
+  model.py                   SparseLevels: one sparse (L1, lasso) logistic regression per level
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
 extra_info/ coefficients per label
-dashboard_sample/  further application: client risk monitor, built on features/ and pipeline/
+dashboard_sample/  further application: client risk monitor, built on code/ and pipeline/
 ```
 
-`features/` and `model/` take tables and know nothing about our data paths;
-only `pipeline/` does. So you can reuse them for a similar task.
+`code/` takes tables and knows nothing about our data paths; only
+`pipeline/` does. So you can reuse `code/` for a similar task.
 
 ## Use it on similar data
 
@@ -131,8 +134,7 @@ cutoff); `y` is the label per client.
 
 ```python
 import pandas as pd
-from features import build_features, select_features
-from model import fit_sparse_levels
+from code import build_features, select_features, fit_sparse_levels
 
 tx = pd.read_json("my_transactions.jsonl", lines=True, dtype={"mcc": str})
 F = build_features(tx, cutoff_date="2026-01-01")          # one row per client
@@ -141,14 +143,14 @@ model = fit_sparse_levels(X, y)                           # y: label per client 
 model.predict(X)
 ```
 
-The subscription tagging in `features/category_map.py` (keywords, MCC codes, non-subscription phrases,
+The subscription tagging in `code/features_category_map.py` (keywords, MCC codes, non-subscription phrases,
 the 7 families in `TARGET_CATEGORIES`) is tuned to this challenge's merchant descriptions; adapt it for your data.
 
 **Any feature table -> any levels.** The model alone works on any table and
 any levels (class labels, cluster ids, customer segments):
 
 ```python
-from model import fit_sparse_levels
+from code import fit_sparse_levels
 
 model = fit_sparse_levels(X, y)            # X: feature table, y: level per row
 model.predict(X_new)                       # predicted level per row
@@ -160,7 +162,7 @@ model.explain(X_new.iloc[[0]])             # why this row got its prediction
 Options: `Cs=(...)` candidate values of C, the inverse penalty strength (smaller C = sparser; one value = fixed C),
 `levels=[...]` fixed order of the levels, `penalty="elasticnet"` with `l1_ratio`
 as an optional alternative to L1 (not used in our final model).
-`python model/sparse_levels.py` runs a small demo. The file is self-contained
+`python code/model.py` runs a small demo. The file is self-contained
 (numpy, pandas, scikit-learn), so you can also copy it on its own.
 
 ## Benchmark: other model types

@@ -5,7 +5,7 @@ the cutoff. Feature blocks:
 
   - account behaviour: client age, transaction mix, amounts, top-ups,
     merchant variety;
-  - per-family stream state, from the recurring streams (features.recurrence):
+  - per-family stream state, from the recurring streams (features_recurrence.py):
     age, number of charges, amount, still live, due first, billing day;
   - recent tagged transactions per family (last 90 days);
   - lateness, portfolio and refund blocks;
@@ -21,8 +21,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from features.category_map import TARGET_CATEGORIES
-from features.recurrence import detect_streams, load_transactions, tag_transactions
+from code.features_category_map import TARGET_CATEGORIES
+from code.features_recurrence import detect_streams, load_transactions, tag_transactions
 
 RECENT_WINDOW_DAYS = 90
 # A stream counts as live if its next charge is overdue by at most this many days.

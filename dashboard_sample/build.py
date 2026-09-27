@@ -14,7 +14,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from features import TARGET_CATEGORIES
+from code import TARGET_CATEGORIES
 from pipeline.data import labelled_features, training_set
 from pipeline.evaluate import build_model
 from dashboard_sample.risk import SNAPSHOTS as ALL_SNAPSHOTS, build_snapshots

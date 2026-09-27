@@ -54,7 +54,7 @@ trained on the train clients only).
 
     python -m dashboard_sample.build
 
-Run from the repo root after unzipping the data (see the main README). It uses `features/` and
+Run from the repo root after unzipping the data (see the main README). It uses `code/` and
 `pipeline/` unchanged. The first run takes ~30-40 min; later runs take ~3 min.
 
 `risk.py` builds the two-weekly snapshots and their on-time/late/missed outcomes (cached in `data/processed/`).
