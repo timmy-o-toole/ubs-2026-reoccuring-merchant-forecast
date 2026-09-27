@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Risk Monitor</title>
+<style>
+  :root {
+    --black: #111111; --beige: #F3F0E8; --red: #E3302C; --grey: #6B675F; --grey-light: #A7A39B;
+    --line: #DAD5CA; --card: #FAF8F3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--beige); color: var(--black); font: 14px/1.45 Arial, Helvetica, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 26px 16px 50px; }
+  .kicker { color: var(--red); font-weight: 700; letter-spacing: .14em; font-size: 12px; text-transform: uppercase; }
+  h1 { font-size: 32px; line-height: 1.1; margin: 6px 0; }
+  .sub { color: var(--grey); margin: 0 0 20px; max-width: 820px; }
+  .grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 18px; }
+  .card + .card { margin-top: 18px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; margin: 0 0 10px; color: var(--grey); font-weight: 700; }
+  .muted { color: var(--grey); }
+  .small { font-size: 12px; }
+
+  /* portfolio */
+  .pf-tools { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pf-tools input { flex: 1; min-width: 100px; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px; background: #fff; }
+  .seg button { font: inherit; font-size: 12px; padding: 6px 9px; border: 1px solid var(--grey-light); background: transparent; cursor: pointer; color: var(--black); }
+  .seg button:first-child { border-radius: 3px 0 0 3px; } .seg button:last-child { border-radius: 0 3px 3px 0; }
+  .seg button + button { border-left: none; }
+  .seg button.on { background: var(--black); color: var(--beige); border-color: var(--black); }
+  .pf { max-height: 640px; overflow-y: auto; margin: 0 -6px; }
+  .pf-row { display: grid; grid-template-columns: 76px 44px 48px 1fr; gap: 6px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--line); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pf-row:hover { background: var(--beige); }
+  .pf-row.on { background: var(--black); color: var(--beige); }
+  .pf-row.on .muted { color: var(--grey-light); }
+  .pf-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--grey); cursor: default; border-bottom: 1px solid var(--black); }
+  .pf-head:hover { background: none; }
+  .risk-pill { font-weight: 700; }
+  .up { color: var(--red); } .down { color: var(--black); }
+  .pf-row.on .up { color: #FF8A86; } .pf-row.on .down { color: var(--beige); }
+  .mini { height: 6px; background: var(--line); position: relative; margin-top: 3px; }
+  .mini i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--red); }
+
+  /* client header */
+  .head { display: flex; flex-wrap: wrap; gap: 14px 34px; align-items: flex-end; }
+  .big { font-size: 52px; font-weight: 700; line-height: 1; }
+  .big small { font-size: 18px; color: var(--grey); font-weight: 400; }
+  .kpi .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); }
+  .kpi .val { font-size: 20px; font-weight: 700; }
+  .chip { display: inline-block; border: 1px solid var(--black); border-radius: 999px; padding: 4px 11px; font-size: 13px; }
+  .chip.dark { background: var(--black); color: var(--beige); }
+  .story { margin: 14px 0 0; font-size: 15px; max-width: 760px; }
+
+  /* charts */
+  svg { display: block; width: 100%; overflow: visible; }
+  svg text { font: 11px Arial, sans-serif; fill: var(--grey); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--grey); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
+  .chart-title { font-size: 13px; font-weight: 700; margin: 16px 0 2px; }
+  .chart-sub { font-size: 12px; color: var(--grey); margin: 0 0 4px; }
+
+  /* detail */
+  .detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px; }
+  .drv { border-bottom: 1px solid var(--line); }
+  .drv-row { display: grid; grid-template-columns: 16px minmax(110px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; padding: 7px 0; cursor: pointer; }
+  .drv-row .caret { color: var(--grey); font-size: 11px; }
+  .dbar { position: relative; height: 12px; }
+  .dbar .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--grey-light); }
+  .dbar .b { position: absolute; top: 1px; height: 10px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .feat { display: grid; grid-template-columns: 16px minmax(110px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; padding: 3px 0; font-size: 12px; }
+  .feat .fv { color: var(--grey); font-size: 11px; }
+  .feats { padding-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-weight: 400; color: var(--grey); text-transform: uppercase; font-size: 10px; letter-spacing: .08em; border-bottom: 1px solid var(--black); padding: 5px 4px; }
+  td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .oc { display: inline-block; padding: 1px 7px; border-radius: 2px; font-size: 11px; }
+  .oc0 { background: var(--line); } .oc1 { background: #F4B9B7; } .oc2 { background: var(--red); color: #fff; } .ocn { color: var(--grey); }
+  details.method { margin-top: 18px; }
+  details.method summary { cursor: pointer; font-weight: 700; }
+  details.method p, details.method li { color: var(--grey); max-width: 900px; }
+  .evaltbl td, .evaltbl th { font-size: 12px; }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .pf { max-height: 300px; }
+    .detail { grid-template-columns: 1fr; }
+    .big { font-size: 42px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Payment risk index</div>
+  <h1>Client risk monitor</h1>
+  <p class="sub">For every client, every two weeks: how likely is it that a recurring payment due in the next 30 days arrives
+    <b>late</b> or is <b>missed</b>? 0 = every payment surely on time, 50 = surely late, 100 = surely missed.
+    The lines below the chart show which groups of client behaviour move the score.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Portfolio</h2>
+      <div class="pf-tools">
+        <input id="q" type="text" placeholder="Search client" autocomplete="off">
+        <div class="seg" id="sort"><button data-k="now" class="on">Highest</button><button data-k="delta">Rising</button></div>
+      </div>
+      <div class="pf-row pf-head"><span>Client</span><span>Risk</span><span>4 wk</span><span>Next payment</span></div>
+      <div class="pf" id="pf"></div>
+      <p class="small muted" id="pf-note"></p>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="head" id="head"></div>
+        <p class="story" id="story"></p>
+
+        <div class="chart-title">Risk index over time</div>
+        <div class="chart-sub">Click a point to see what moved it. Squares show what actually happened to the payments due at that date.</div>
+        <div id="line"></div>
+        <div class="legend"><span><i style="background:var(--black)"></i>this client</span><span><i style="background:var(--grey-light)"></i>portfolio average</span>
+          <span><i class="oc0"></i>all on time</span><span><i class="oc1"></i>late</span><span><i class="oc2"></i>missed</span><span><i style="border:1px solid var(--grey-light);background:transparent"></i>not yet known</span></div>
+
+        <div class="chart-title">What drives the score</div>
+        <div class="chart-sub">Contribution of each behaviour group to the risk, compared with an average client (above the line = more risk).</div>
+        <div id="stack"></div>
+        <div class="legend" id="stack-legend"></div>
+      </div>
+
+      <div class="card">
+        <div class="detail">
+          <div>
+            <h2 id="d-title">Why did it move?</h2>
+            <div id="drivers"></div>
+            <p class="small muted">Change in risk points since the previous snapshot, split by group (click a group for its features). Groups add up exactly to the total change.</p>
+          </div>
+          <div>
+            <h2>Payments due at this date</h2>
+            <div id="due"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <details class="method">
+          <summary>How the index is calculated and how good it is</summary>
+          <div id="method"></div>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const F = D.features, G = D.groups, T = D.dates.length;
+const sigm = v => 1 / (1 + Math.exp(-v));
+const dateLbl = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const OUT = ['on time', 'late', 'missed'];
+
+// ---- model (same math as src/risk_model.py) ----------------------------
+function contrib(x) {   // clip to train range, impute median, standardise, times beta
+  return x.map((v, j) => { const f = F[j]; const c = v === null ? f.median : Math.min(f.hi, Math.max(f.lo, v)); return (c - f.mean) / f.scale * D.beta[j]; });
+}
+function probs(eta) {
+  const ps = sigm(D.a1 + eta), pm = ps * sigm(D.a2 + eta);
+  return { late: ps - pm, missed: pm, index: 50 * (ps - pm) + 100 * pm };
+}
+function series(c) {
+  return c.x.map(x => {
+    const k = contrib(x), eta = k.reduce((a, b) => a + b, 0);
+    const g = G.map((_, gi) => 0); k.forEach((v, j) => g[F[j].group] += v);
+    return { k, g, eta, ...probs(eta) };
+  });
+}
+const PF = D.portfolio;
+const byId = new Map(PF.map(p => [p.id, p]));
+
+// ---- portfolio ---------------------------------------------------------
+let sortKey = 'now', selId = null, selT = T - 1, open = new Set();
+function renderPortfolio() {
+  const q = $('q').value.trim().toUpperCase();
+  const rows = PF.filter(p => !q || p.id.includes(q))
+    .sort((a, b) => sortKey === 'now' ? b.now - a.now : b.delta - a.delta);
+  $('pf').innerHTML = rows.map(p => {
+    const d = p.delta, arrow = Math.abs(d) < 1 ? '→' : d > 0 ? '↑' : '↓';
+    return `<div class="pf-row ${p.id === selId ? 'on' : ''}" data-id="${p.id}"><span>${p.id}</span>
+      <span><span class="risk-pill">${Math.round(p.now)}</span><div class="mini"><i style="width:${Math.min(100, p.now)}%"></i></div></span>
+      <span class="${d > 1 ? 'up' : d < -1 ? 'down' : 'muted'}">${arrow} ${Math.abs(d).toFixed(0)}</span>
+      <span class="muted small">${esc(p.next)} ${Math.round(100 * p.next_p)}%</span></div>`;
+  }).join('');
+  $('pf').querySelectorAll('.pf-row').forEach(r => r.onclick = () => select(r.dataset.id));
+  $('pf-note').textContent = `${rows.length} of ${PF.length} clients (held-out validation clients). "4 wk" = change over the last 4 weeks.`;
+}
+$('q').oninput = renderPortfolio;
+$('sort').querySelectorAll('button').forEach(b => b.onclick = () => {
+  sortKey = b.dataset.k; $('sort').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderPortfolio();
+});
+
+// ---- client ------------------------------------------------------------
+let S = null, C = null;
+function select(id, t) {
+  selId = id; C = D.clients[id]; S = series(C); selT = t ?? T - 1; open = new Set();
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  renderPortfolio(); renderClient();
+}
+function renderClient() {
+  const p = byId.get(selId), now = S[T - 1], prev = S[D.i4];
+  const d = now.index - prev.index;
+  $('head').innerHTML = `
+    <div><div class="kpi"><span class="lbl">${esc(selId)} · risk index today</span></div>
+      <div class="big">${Math.round(now.index)}<small> / 100</small></div></div>
+    <div class="kpi"><div class="lbl">4-week change</div><div class="val ${d > 1 ? 'up' : ''}">${d > 0 ? '↑ +' : d < 0 ? '↓ −' : '→ '}${Math.abs(d).toFixed(0)}</div></div>
+    <div class="kpi"><div class="lbl">P(late)</div><div class="val">${Math.round(100 * now.late)}%</div></div>
+    <div class="kpi"><div class="lbl">P(missed)</div><div class="val" style="color:var(--red)">${Math.round(100 * now.missed)}%</div></div>
+    <div class="kpi"><div class="lbl">Next payment (category model)</div><div><span class="chip dark">${esc(p.next)} · ${Math.round(100 * p.next_p)}%</span></div></div>`;
+  $('story').innerHTML = storyText();
+  renderLine(); renderStack(); renderDetail();
+}
+function storyText() {
+  const now = S[T - 1], prev = S[D.i4];
+  const dg = G.map((g, i) => ({ g, v: now.g[i] - prev.g[i] })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+  const lvl = now.index >= D.levels[1] ? 'high' : now.index >= D.levels[0] ? 'medium' : 'low';
+  const d = now.index - prev.index;
+  const move = Math.abs(d) < 1 ? 'stable over the last 4 weeks' : `${d > 0 ? 'up' : 'down'} ${Math.abs(d).toFixed(0)} points in 4 weeks`;
+  const main = dg[0];
+  const why = Math.abs(d) >= 1 ? `, mainly because of <b>${esc(main.g.name.toLowerCase())}</b> (${main.v > 0 ? 'more' : 'less'} risk)` : '';
+  return `Risk is <b>${lvl}</b> compared with the portfolio (${ordinal(byId.get(selId).pct)} percentile) and ${move}${why}.`;
+}
+const ordinal = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+
+// ---- charts ------------------------------------------------------------
+const PAD = { l: 36, r: 12 };
+function xScale(W) { const t0 = Date.parse(D.dates[0]), t1 = Date.parse(D.dates[T - 1]); return i => PAD.l + (W - PAD.l - PAD.r) * (Date.parse(D.dates[i]) - t0) / (t1 - t0); }
+function width(el) { return Math.max(320, el.clientWidth || 700); }
+
+function renderLine() {
+  const el = $('line'), W = width(el), H = 230, top = 10, bot = 190, X = xScale(W);
+  const vals = S.map(s => s.index), avg = D.avg_index;
+  const ymax = Math.min(100, Math.max(40, Math.ceil((Math.max(...vals, ...avg) + 5) / 10) * 10));
+  const Y = v => bot - (bot - top) * v / ymax;
+  let g = '';
+  for (let v = 0; v <= ymax; v += ymax <= 50 ? 10 : 20)
+    g += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#DAD5CA"/><text x="${PAD.l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  const path = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+  g += `<path d="${path(avg)}" fill="none" stroke="#A7A39B" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  g += `<path d="${path(vals)}" fill="none" stroke="#111111" stroke-width="2.2"/>`;
+  g += `<line x1="${X(selT)}" x2="${X(selT)}" y1="${top}" y2="${bot}" stroke="#E3302C" stroke-width="1" stroke-dasharray="2 2"/>`;
+  vals.forEach((v, i) => {
+    g += `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === selT ? 6 : 3.5}" fill="${i === selT ? '#E3302C' : '#111111'}" stroke="#FAF8F3" stroke-width="1.5"/>`;
+    const o = C.outcome[i], fill = o === null ? 'none' : ['#DAD5CA', '#F4B9B7', '#E3302C'][o];
+    if (C.n_due[i] > 0) g += `<rect x="${X(i) - 5}" y="${bot + 10}" width="10" height="10" fill="${fill}" stroke="${o === null ? '#A7A39B' : 'none'}"><title>${dateLbl(D.dates[i])}: ${o === null ? 'not yet known' : OUT[o]}</title></rect>`;
+    g += `<rect x="${X(i) - 9}" y="${top}" width="18" height="${bot - top + 22}" fill="transparent" data-t="${i}" style="cursor:pointer"><title>${dateLbl(D.dates[i])}: ${v.toFixed(0)}</title></rect>`;
+  });
+  D.dates.forEach((d, i) => { if (i % 2 === 0 || i === T - 1) g += `<text x="${X(i)}" y="${H - 2}" text-anchor="middle">${dateLbl(d)}</text>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  el.querySelectorAll('[data-t]').forEach(r => r.onclick = () => { selT = +r.dataset.t; open = new Set(); renderLine(); renderStack(); renderDetail(); });
+}
+
+function renderStack() {
+  const el = $('stack'), W = width(el), H = 190, top = 8, bot = 168, X = xScale(W);
+  const mid = (top + bot) / 2;
+  const ext = Math.max(0.5, ...S.map(s => Math.max(s.g.filter(v => v > 0).reduce((a, b) => a + b, 0), -s.g.filter(v => v < 0).reduce((a, b) => a + b, 0))));
+  const Y = v => mid - (bot - top) / 2 * v / ext;
+  const bw = Math.max(6, Math.min(22, (W - PAD.l - PAD.r) / T * 0.6));
+  let g = `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${mid}" y2="${mid}" stroke="#111111"/>
+    <text x="${PAD.l - 6}" y="${top + 8}" text-anchor="end">more</text><text x="${PAD.l - 6}" y="${bot}" text-anchor="end">less</text>`;
+  S.forEach((s, i) => {
+    let up = 0, dn = 0;
+    s.g.forEach((v, gi) => {
+      const a = v >= 0 ? up : dn, b = a + v;
+      if (v >= 0) up = b; else dn = b;
+      g += `<rect x="${X(i) - bw / 2}" y="${Math.min(Y(a), Y(b))}" width="${bw}" height="${Math.abs(Y(a) - Y(b))}" fill="${G[gi].color}" opacity="${i === selT ? 1 : 0.8}"><title>${esc(G[gi].name)}: ${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} log-odds</title></rect>`;
+    });
+    if (i === selT) g += `<rect x="${X(i) - bw / 2 - 3}" y="${top - 2}" width="${bw + 6}" height="${bot - top + 4}" fill="none" stroke="#E3302C" stroke-width="1.5"/>`;
+    g += `<rect x="${X(i) - bw / 2 - 3}" y="${top}" width="${bw + 6}" height="${bot - top}" fill="transparent" data-t="${i}" style="cursor:pointer"/>`;
+  });
+  D.dates.forEach((d, i) => { if (i % 2 === 0 || i === T - 1) g += `<text x="${X(i)}" y="${H - 2}" text-anchor="middle">${dateLbl(d)}</text>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  el.querySelectorAll('[data-t]').forEach(r => r.onclick = () => { selT = +r.dataset.t; open = new Set(); renderLine(); renderStack(); renderDetail(); });
+  $('stack-legend').innerHTML = G.map(g => `<span><i style="background:${g.color}"></i>${esc(g.name)}</span>`).join('');
+}
+
+// ---- detail: why did it move? -------------------------------------------
+const fmt = (v, f) => v === null ? 'missing' : f.binary ? (v >= 0.5 ? 'yes' : 'no') : Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2);
+function renderDetail() {
+  const t = selT, t0 = Math.max(0, t - 1), s = S[t], s0 = S[t0];
+  const dIdx = s.index - s0.index, dEta = s.eta - s0.eta;
+  // Exact split: risk points per unit of log-odds between the two snapshots (secant slope), times each group's change.
+  const slope = Math.abs(dEta) > 1e-9 ? dIdx / dEta : (probs(s.eta + 1e-4).index - s.index) / 1e-4;
+  $('d-title').innerHTML = t === 0 ? `Risk on ${dateLbl(D.dates[t])}: ${s.index.toFixed(0)}` :
+    `${dateLbl(D.dates[t])}: risk ${s.index.toFixed(0)} <span style="color:${dIdx > 0 ? 'var(--red)' : 'var(--black)'}">(${dIdx >= 0 ? '+' : '−'}${Math.abs(dIdx).toFixed(1)} since ${dateLbl(D.dates[t0])})</span>`;
+  const rows = G.map((g, gi) => ({ gi, g, v: slope * (s.g[gi] - s0.g[gi]) })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+  const m = Math.max(0.5, ...rows.map(r => Math.abs(r.v)));
+  const bar = (v, mm) => { const w = 50 * Math.min(1, Math.abs(v) / mm); return `<div class="dbar"><div class="mid"></div><div class="b" style="background:${v >= 0 ? 'var(--red)' : 'var(--black)'};${v >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>`; };
+  $('drivers').innerHTML = t === 0 ? '<p class="muted">First snapshot: nothing to compare with yet. Pick a later point.</p>' : rows.map(r => {
+    const feats = F.map((f, j) => ({ f, j, v: slope * (s.k[j] - s0.k[j]) })).filter(o => o.f.group === r.gi && Math.abs(o.v) >= 0.05)
+      .sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+    const isOpen = open.has(r.gi);
+    const fm = Math.max(0.5, ...feats.map(o => Math.abs(o.v)));
+    return `<div class="drv"><div class="drv-row" data-g="${r.gi}"><span class="caret">${feats.length ? (isOpen ? '▾' : '▸') : ''}</span>
+      <span><i style="display:inline-block;width:9px;height:9px;background:${r.g.color};margin-right:6px"></i>${esc(r.g.name)}</span>${bar(r.v, m)}
+      <span class="num" style="color:${r.v > 0.05 ? 'var(--red)' : 'var(--black)'}">${r.v >= 0 ? '+' : '−'}${Math.abs(r.v).toFixed(1)}</span></div>
+      ${isOpen ? `<div class="feats">${feats.map(o => `<div class="feat"><span></span><span>${esc(o.f.name)}<br><span class="fv">${fmt(C.x[t0][o.j], o.f)} → ${fmt(C.x[t][o.j], o.f)}</span></span>${bar(o.v, fm)}<span class="num" style="font-weight:400">${o.v >= 0 ? '+' : '−'}${Math.abs(o.v).toFixed(1)}</span></div>`).join('') || '<div class="feat small muted"><span></span><span>no single feature moved more than 0.05 points</span></div>'}</div>` : ''}</div>`;
+  }).join('') + (t === 0 ? '' : `<div class="drv-row" style="cursor:default;font-weight:700"><span></span><span>Total change</span><span></span><span class="num">${dIdx >= 0 ? '+' : '−'}${Math.abs(dIdx).toFixed(1)}</span></div>`);
+  $('drivers').querySelectorAll('[data-g]').forEach(r => r.onclick = () => { const g = +r.dataset.g; open.has(g) ? open.delete(g) : open.add(g); renderDetail(); });
+
+  const due = C.due[t];
+  $('due').innerHTML = !due.length ? `<p class="muted">No recurring payment due between ${dateLbl(D.dates[t])} and 30 days later.</p>` :
+    `<table><thead><tr><th>Payment</th><th>Amount</th><th>Expected</th><th>Arrived</th><th>Outcome</th></tr></thead><tbody>` +
+    due.map(([cat, amt, exp, arr, o]) => `<tr><td>${esc(cat || 'unlabelled')}</td><td>${amt.toFixed(2)}</td><td>${dateLbl(exp)}</td><td>${arr ? dateLbl(arr) : '—'}</td>
+      <td>${o === null ? '<span class="oc ocn">not yet known</span>' : `<span class="oc oc${o}">${OUT[o]}</span>`}</td></tr>`).join('') + '</tbody></table>' +
+    `<p class="small muted">Model at this date: P(late) ${Math.round(100 * s.late)}%, P(missed) ${Math.round(100 * s.missed)}%.</p>`;
+}
+
+// ---- method ------------------------------------------------------------
+$('method').innerHTML = D.method;
+
+window.addEventListener('resize', () => { if (S) { renderLine(); renderStack(); } });
+const h = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+select(D.clients[h] ? h : D.default_client);
+</script>
+</body>
+</html>

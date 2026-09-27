@@ -126,6 +126,7 @@ model/      the model: SparseLevels, one sparse logistic regression per level (L
 pipeline/   our task: data paths, labels, training set, evaluation, submission
 data/       challenge data (dataset.zip)
 extra_info/ experiment log, verified interpretations, coefficients per label
+dashboard_sample/  further application: client risk monitor, built on features/ and pipeline/
 ```
 
 `features/` and `model/` take tables and know nothing about our data paths;
@@ -176,5 +177,13 @@ unzip -j data/dataset.zip -d data/            # challenge files directly into da
 python -m pipeline.evaluate "my run"           # train, score on validation, log
 python -m pipeline.make_submission             # -> data/submission_final.csv
 ```
+
+## Further application: client risk monitor
+
+`dashboard_sample/` asks a second question with the same 103 features: will a
+client's next recurring payments arrive on time, late, or not at all? One sparse
+L1 model gives each client a risk index (0-100) over time, and shows which
+features moved it. Open `dashboard_sample/index.html`; details in its
+[README](dashboard_sample/README.md).
 
 Challenge data and task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swiss-ai-Weeks/ubs-2026) (Apache 2.0).
