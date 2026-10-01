@@ -4,151 +4,263 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Client Risk Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --black: #111111; --beige: #F3F0E8; --red: #E3302C; --grey: #6B675F; --grey-light: #A7A39B;
-    --line: #DAD5CA; --card: #FAF8F3;
+    --bg: #F3F0E8; --card: #FAF8F3; --ink: #111111; --ink-2: #5F5B54; --muted: #6B675F;
+    --line: #DAD5CA; --line-strong: #A7A39B; --mid: #E9E4DA;
+    --red: #E3302C;      /* risk marks and fills */
+    --red-ink: #C0221E;  /* risk text (5.3:1 on --bg) */
+    --blue: #1F5A99;     /* "lowers risk" pole */
+    --ok: #D6D0C4;       /* payment on time */
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--beige); color: var(--black); font: 14px/1.45 Arial, Helvetica, sans-serif; }
-  .wrap { max-width: 1280px; margin: 0 auto; padding: 26px 16px 50px; }
-  .kicker { color: var(--red); font-weight: 700; letter-spacing: .14em; font-size: 12px; text-transform: uppercase; }
-  h1 { font-size: 32px; line-height: 1.1; margin: 6px 0; }
-  .sub { color: var(--grey); margin: 0 0 20px; max-width: 820px; }
-  .grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 18px; }
-  .card + .card { margin-top: 18px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; margin: 0 0 10px; color: var(--grey); font-weight: 700; }
-  .muted { color: var(--grey); }
-  .small { font-size: 12px; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  ::selection { background: #F4C9C6; color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  b { font-weight: 600; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 36px 16px 56px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .up { color: var(--red-ink); }
+  .num-t { font-variant-numeric: tabular-nums; }
+
+  /* page header */
+  h1 { font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; margin: 0 0 10px; }
+  .lede { margin: 0; max-width: 68ch; font-size: 17px; color: var(--ink); }
+  .hint { margin: 8px 0 28px; color: var(--muted); font-size: 14px; }
+
+  .grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 22px; }
+  .stack > .card + .card { margin-top: 20px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.005em; }
+  .sub { font-size: 13px; color: var(--muted); margin: 0 0 12px; max-width: 72ch; }
 
   /* portfolio */
-  .pf-tools { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-  .pf-tools input { flex: 1; min-width: 100px; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px; background: #fff; }
-  .seg button { font: inherit; font-size: 12px; padding: 6px 9px; border: 1px solid var(--grey-light); background: transparent; cursor: pointer; color: var(--black); }
-  .seg button:first-child { border-radius: 3px 0 0 3px; } .seg button:last-child { border-radius: 0 3px 3px 0; }
+  .pf-card { position: sticky; top: 16px; padding: 20px 16px 14px; }
+  .pf-card h2 { margin-bottom: 12px; padding: 0 4px; }
+  .pf-tools { display: flex; gap: 8px; margin: 0 4px 12px; flex-wrap: wrap; }
+  .pf-tools input { flex: 1; min-width: 110px; font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--ink); }
+  .pf-tools input::placeholder { color: var(--muted); }
+  .seg { display: flex; }
+  .seg button { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line-strong); background: transparent; cursor: pointer; color: var(--ink); }
+  .seg button:first-child { border-radius: 4px 0 0 4px; } .seg button:last-child { border-radius: 0 4px 4px 0; }
   .seg button + button { border-left: none; }
-  .seg button.on { background: var(--black); color: var(--beige); border-color: var(--black); }
-  .pf { max-height: 640px; overflow-y: auto; margin: 0 -6px; }
-  .pf-row { display: grid; grid-template-columns: 76px 44px 48px 1fr; gap: 6px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--line); cursor: pointer; font-variant-numeric: tabular-nums; }
-  .pf-row:hover { background: var(--beige); }
-  .pf-row.on { background: var(--black); color: var(--beige); }
-  .pf-row.on .muted { color: var(--grey-light); }
-  .pf-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--grey); cursor: default; border-bottom: 1px solid var(--black); }
+  .seg button:hover { background: var(--mid); }
+  .seg button.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .pf { max-height: calc(100vh - 250px); min-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  .pf-row { display: grid; grid-template-columns: 68px 26px 36px 36px minmax(0, 1fr); gap: 7px; align-items: center; width: 100%;
+    padding: 8px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; font: inherit; font-size: 14px; color: var(--ink);
+    text-align: left; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pf-row:hover { background: var(--mid); }
+  .pf-row.on { background: var(--ink); color: var(--card); }
+  .pf-row.on .muted, .pf-row.on .dn { color: #C9C4B8; } .pf-row.on .up { color: #FF9D99; }
+  .pf-row .r { text-align: right; font-weight: 600; }
+  .pf-row .d { text-align: right; }
+  .pf-row .nx { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { height: 6px; background: var(--mid); border-radius: 3px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--red); border-radius: 3px; }
+  .pf-row.on .bar { background: #3A3834; }
+  .pf-head { font-size: 12px; color: var(--muted); cursor: default; border-bottom: 1px solid var(--ink); padding-top: 0; }
   .pf-head:hover { background: none; }
-  .risk-pill { font-weight: 700; }
-  .up { color: var(--red); } .down { color: var(--black); }
-  .pf-row.on .up { color: #FF8A86; } .pf-row.on .down { color: var(--beige); }
-  .mini { height: 6px; background: var(--line); position: relative; margin-top: 3px; }
-  .mini i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--red); }
+  .dn { color: var(--ink-2); }
+  .pf-note { font-size: 12px; color: var(--muted); margin: 10px 4px 0; }
 
   /* client header */
-  .head { display: flex; flex-wrap: wrap; gap: 14px 34px; align-items: flex-end; }
-  .big { font-size: 52px; font-weight: 700; line-height: 1; }
-  .big small { font-size: 18px; color: var(--grey); font-weight: 400; }
-  .kpi .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); }
-  .kpi .val { font-size: 20px; font-weight: 700; }
-  .chip { display: inline-block; border: 1px solid var(--black); border-radius: 999px; padding: 4px 11px; font-size: 13px; }
-  .chip.dark { background: var(--black); color: var(--beige); }
-  .story { margin: 14px 0 0; font-size: 15px; max-width: 760px; }
+  .head { display: grid; grid-template-columns: minmax(260px, 380px) minmax(0, 1fr); gap: 20px 40px; align-items: end; }
+  .cid { font-size: 16px; font-weight: 600; margin: 0; }
+  .cid span { font-weight: 400; color: var(--muted); }
+  .big { font-size: 64px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin: 8px 0 14px; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 18px; color: var(--muted); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
+  .scale { position: relative; height: 10px; border-radius: 5px; background: linear-gradient(to right, var(--mid), #DB9D8E 50%, var(--red)); }
+  .scale .you { position: absolute; top: -5px; width: 4px; height: 20px; margin-left: -2px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px var(--card); }
+  .scale .avg { position: absolute; top: -3px; width: 2px; height: 16px; margin-left: -1px; background: var(--ink-2); opacity: .7; }
+  .scale-lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .scale-key { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .scale-key i { display: inline-block; vertical-align: -2px; margin-right: 5px; background: var(--ink); width: 3px; height: 12px; border-radius: 1px; }
+  .scale-key .ka { background: var(--ink-2); opacity: .7; width: 2px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px 24px; margin: 0; }
+  .kpis div { border-top: 1px solid var(--line); padding-top: 8px; }
+  .kpis dt { font-size: 12px; color: var(--muted); }
+  .kpis dd { margin: 2px 0 0; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .chip { display: inline-block; background: var(--ink); color: var(--card); border-radius: 999px; padding: 3px 12px; font-size: 14px; font-weight: 500; }
+  .story { margin: 22px 0 0; font-size: 17px; max-width: 70ch; }
 
   /* charts */
+  .chart-block { margin-top: 30px; }
+  .chart { position: relative; margin-top: 6px; border-radius: 4px; }
   svg { display: block; width: 100%; overflow: visible; }
-  svg text { font: 11px Arial, sans-serif; fill: var(--grey); }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--grey); margin-top: 6px; }
-  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
-  .chart-title { font-size: 13px; font-weight: 700; margin: 16px 0 2px; }
-  .chart-sub { font-size: 12px; color: var(--grey); margin: 0 0 4px; }
+  svg text { font: 11px var(--font); fill: var(--muted); font-variant-numeric: tabular-nums; }
+  svg .rowlbl { font-size: 12px; fill: var(--ink-2); }
+  svg .endlbl { font-size: 12px; font-weight: 600; fill: var(--ink); }
+  svg .gut { font-size: 12px; fill: var(--ink-2); }
+  .grid-l { stroke: var(--line); }
+  .avg-l { fill: none; stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .cli-l { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+  .pt { fill: var(--ink); stroke: var(--card); stroke-width: 1.5; }
+  .pt.on { stroke-width: 2.5; }
+  .sel-l { stroke: var(--ink-2); stroke-dasharray: 2 3; }
+  .hov-l { stroke: var(--line-strong); }
+  .selbox { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+  .hovbox { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+  .oc-0 { fill: var(--ok); } .oc-1 { fill: var(--card); stroke: var(--red); stroke-width: 1.75; } .oc-2 { fill: var(--red); }
+  .oc-n { fill: none; stroke: var(--line-strong); stroke-dasharray: 2 2; }
+  .hit { fill: transparent; cursor: pointer; }
+  .tip { position: absolute; top: 4px; z-index: 5; pointer-events: none; background: var(--ink); color: var(--card); font-size: 12px; line-height: 1.45;
+    padding: 9px 11px; border-radius: 5px; min-width: 190px; box-shadow: 0 6px 18px rgba(17, 17, 17, .18); font-variant-numeric: tabular-nums; }
+  .tip .m { color: #C9C4B8; }
+  .tip .tr { display: grid; grid-template-columns: 10px 1fr auto; gap: 7px; align-items: center; margin-top: 3px; }
+  .tip .tr i { width: 10px; height: 10px; border-radius: 2px; }
+  .tip .tr .n { text-align: right; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin-top: 8px; align-items: center; }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+  .legend .ln { width: 16px; height: 0; border-top: 2px solid var(--ink); border-radius: 0; vertical-align: 3px; }
+  .legend .ln.dash { border-top: 2px dashed var(--line-strong); }
+  .legend .l-1 { background: var(--card); box-shadow: inset 0 0 0 1.75px var(--red); }
+  .legend .l-n { background: none; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .legend .sep { color: var(--ink-2); }
+  .legend .lg { font: inherit; color: inherit; background: none; border: 0; padding: 2px 4px; margin: 0 -4px; border-radius: 3px; cursor: default; }
+  .legend .lg:hover, .legend .lg:focus-visible { background: var(--mid); color: var(--ink); }
+  .legend .net { border-radius: 50%; background: var(--ink); width: 8px; height: 8px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .chart-head h2 { margin: 0; }
+  .seg-s { stroke: var(--card); stroke-width: 2; transition: opacity .15s ease-out; }
+  svg.hl .seg-s { opacity: .18; } svg.hl .seg-s.on { opacity: 1; }
+  .net-pt { fill: var(--ink); stroke: var(--card); stroke-width: 1.5; }
+  .base-l { stroke: var(--ink); }
+  .tip .tr i.k { height: 3px; border-radius: 2px; }
+  .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; vertical-align: 0; }
+  .ramp { display: inline-flex; align-items: center; gap: 2px; }
+  .ramp i { margin: 0; width: 14px; height: 10px; border-radius: 0; }
+  .ramp span { margin: 0 6px; }
 
   /* detail */
-  .detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px; }
+  .detail { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 36px; }
   .drv { border-bottom: 1px solid var(--line); }
-  .drv-row { display: grid; grid-template-columns: 16px minmax(110px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; padding: 7px 0; cursor: pointer; }
-  .drv-row .caret { color: var(--grey); font-size: 11px; }
+  .drv-row { display: grid; grid-template-columns: 14px minmax(120px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; width: 100%;
+    padding: 9px 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--ink); text-align: left; cursor: pointer; }
+  .drv-row:hover { background: var(--mid); }
+  .drv-row[disabled] { cursor: default; } .drv-row[disabled]:hover { background: none; }
+  .caret { color: var(--muted); font-size: 10px; transition: transform .2s cubic-bezier(.2, .7, .2, 1); display: inline-block; }
+  .caret.open { transform: rotate(90deg); }
   .dbar { position: relative; height: 12px; }
-  .dbar .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--grey-light); }
+  .dbar .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-strong); }
   .dbar .b { position: absolute; top: 1px; height: 10px; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-  .feat { display: grid; grid-template-columns: 16px minmax(110px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; padding: 3px 0; font-size: 12px; }
-  .feat .fv { color: var(--grey); font-size: 11px; }
-  .feats { padding-bottom: 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; font-weight: 400; color: var(--grey); text-transform: uppercase; font-size: 10px; letter-spacing: .08em; border-bottom: 1px solid var(--black); padding: 5px 4px; }
-  td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
-  .oc { display: inline-block; padding: 1px 7px; border-radius: 2px; font-size: 11px; }
-  .oc0 { background: var(--line); } .oc1 { background: #F4B9B7; } .oc2 { background: var(--red); color: #fff; } .ocn { color: var(--grey); }
-  details.method { margin-top: 18px; }
-  details.method summary { cursor: pointer; font-weight: 700; }
-  details.method p, details.method li { color: var(--grey); max-width: 900px; }
-  .evaltbl td, .evaltbl th { font-size: 12px; }
+  .dbar .b.pos { background: var(--red); border-radius: 0 3px 3px 0; } .dbar .b.neg { background: var(--blue); border-radius: 3px 0 0 3px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .feats { padding: 0 0 10px; }
+  .feat { display: grid; grid-template-columns: 14px minmax(120px, 1fr) 1.2fr 56px; gap: 8px; align-items: center; padding: 4px 0; font-size: 13px; }
+  .feat .fv { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .total { display: grid; grid-template-columns: 14px minmax(120px, 1fr) 1.2fr 56px; gap: 8px; padding: 10px 0 0; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--ink); padding: 6px 6px 6px 0; }
+  td { padding: 8px 6px 8px 0; border-bottom: 1px solid var(--line); }
+  td.r, th.r { text-align: right; padding-right: 12px; }
+  .oc { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 12px; font-weight: 500; }
+  .oc0 { background: var(--ok); } .oc1 { box-shadow: inset 0 0 0 1.5px var(--red); color: var(--red-ink); } .oc2 { background: var(--red); color: #fff; } .ocn { color: var(--muted); padding-left: 0; }
 
-  @media (max-width: 900px) {
+  /* method */
+  details.method summary { cursor: pointer; font-weight: 600; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.method summary::-webkit-details-marker { display: none; }
+  details.method summary::before { content: "▸"; font-size: 11px; color: var(--muted); transition: transform .2s cubic-bezier(.2, .7, .2, 1); }
+  details.method[open] summary::before { transform: rotate(90deg); }
+  details.method p, details.method li { color: var(--ink-2); max-width: 80ch; }
+  details.method li { margin-bottom: 6px; }
+  .evaltbl { margin: 14px 0; max-width: 760px; }
+  .foot { font-size: 12px; color: var(--muted); margin: 18px 0 0; max-width: 80ch; }
+
+  @media (max-width: 1000px) {
     .grid { grid-template-columns: 1fr; }
-    .pf { max-height: 300px; }
+    .pf-card { position: static; }
+    .pf { max-height: 320px; min-height: 0; }
+    .head { grid-template-columns: 1fr; }
     .detail { grid-template-columns: 1fr; }
-    .big { font-size: 42px; }
   }
+  @media (max-width: 560px) {
+    h1 { font-size: 28px; }
+    .lede, .story { font-size: 16px; }
+    .card { padding: 16px; }
+    .big { font-size: 52px; }
+    .kpis dd { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="kicker">Payment risk index</div>
   <h1>Client risk monitor</h1>
-  <p class="sub">For every client, every two weeks: how likely is it that a recurring payment due in the next 30 days arrives
-    <b>late</b> or is <b>missed</b>? 0 = every payment surely on time, 50 = surely late, 100 = surely missed.
-    The lines below the chart show which groups of client behaviour move the score.</p>
+  <p class="lede">Will a client's recurring payments over the next 30 days arrive on time? Every two weeks, each client gets a
+    <b>risk index</b> from 0 (every payment on time) through 50 (surely late) to 100 (surely missed), together with the behaviour that moved it.</p>
+  <p class="hint">Pick a client from the list, then hover or click any date in the charts. Arrow keys step through dates.</p>
 
   <div class="grid">
-    <div class="card">
-      <h2>Portfolio</h2>
+    <aside class="card pf-card">
+      <h2>Clients</h2>
       <div class="pf-tools">
-        <input id="q" type="text" placeholder="Search client" autocomplete="off">
-        <div class="seg" id="sort"><button data-k="now" class="on">Highest</button><button data-k="delta">Rising</button></div>
+        <label class="sr" for="q">Search clients</label>
+        <input id="q" type="search" placeholder="Search client ID" autocomplete="off">
+        <div class="seg" id="sort" role="group" aria-label="Sort clients"><button type="button" data-k="now" class="on" aria-pressed="true">Highest risk</button><button type="button" data-k="delta" aria-pressed="false">Rising</button></div>
       </div>
-      <div class="pf-row pf-head"><span>Client</span><span>Risk</span><span>4 wk</span><span>Next payment</span></div>
+      <div class="pf-row pf-head" aria-hidden="true"><span>Client</span><span class="r" style="font-weight:500">Risk</span><span></span><span class="d">4 wk</span><span>Likely next</span></div>
       <div class="pf" id="pf"></div>
-      <p class="small muted" id="pf-note"></p>
-    </div>
+      <p class="pf-note" id="pf-note"></p>
+    </aside>
 
-    <div>
-      <div class="card">
+    <main class="stack">
+      <section class="card">
         <div class="head" id="head"></div>
         <p class="story" id="story"></p>
 
-        <div class="chart-title">Risk index over time</div>
-        <div class="chart-sub">Click a point to see what moved it. Squares show what actually happened to the payments due at that date.</div>
-        <div id="line"></div>
-        <div class="legend"><span><i style="background:var(--black)"></i>this client</span><span><i style="background:var(--grey-light)"></i>portfolio average</span>
-          <span><i class="oc0"></i>all on time</span><span><i class="oc1"></i>late</span><span><i class="oc2"></i>missed</span><span><i style="border:1px solid var(--grey-light);background:transparent"></i>not yet known</span></div>
+        <div class="chart-block">
+          <h2>Risk index over time</h2>
+          <p class="sub">Squares below the line show what actually happened to the payments due at each date.</p>
+          <div class="chart" id="line" tabindex="0" aria-label="Risk index over time. Use the left and right arrow keys to change the date."></div>
+          <div class="legend"><span><i class="ln"></i>this client</span><span><i class="ln dash"></i>portfolio average</span>
+            <span class="sep">Payments due:</span><span><i class="oc-0" style="background:var(--ok)"></i>all on time</span><span><i class="l-1"></i>late</span>
+            <span><i style="background:var(--red)"></i>missed</span><span><i class="l-n"></i>not yet known</span></div>
+        </div>
 
-        <div class="chart-title">What drives the score</div>
-        <div class="chart-sub">Contribution of each behaviour group to the risk, compared with an average client (above the line = more risk).</div>
-        <div id="stack"></div>
-        <div class="legend" id="stack-legend"></div>
-      </div>
+        <div class="chart-block">
+          <div class="chart-head">
+            <h2>What drives the score</h2>
+            <div class="seg" id="view" role="group" aria-label="Chart type"><button type="button" data-v="bars" class="on" aria-pressed="true">Bars</button><button type="button" data-v="grid" aria-pressed="false">Grid</button></div>
+          </div>
+          <p class="sub" id="drv-sub"></p>
+          <div class="chart" id="drv" tabindex="0" aria-label="Drivers of the risk index by behaviour group and date. Use the left and right arrow keys to change the date."></div>
+          <div class="legend" id="drv-legend"></div>
+        </div>
+      </section>
 
-      <div class="card">
+      <section class="card">
         <div class="detail">
           <div>
-            <h2 id="d-title">Why did it move?</h2>
+            <h2>What moved the score</h2>
+            <p class="sub" id="d-sub"></p>
             <div id="drivers"></div>
-            <p class="small muted">Change in risk points since the previous snapshot, split by group (click a group for its features). Groups add up exactly to the total change.</p>
+            <p class="small muted">Change in risk points, split by behaviour group; the groups add up exactly to the total. Open a group to see its features.</p>
           </div>
           <div>
-            <h2>Payments due at this date</h2>
+            <h2>Payments due</h2>
+            <p class="sub" id="due-sub"></p>
             <div id="due"></div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
+      <section class="card">
         <details class="method">
-          <summary>How the index is calculated and how good it is</summary>
+          <summary>How the index is calculated and how accurate it is</summary>
           <div id="method"></div>
         </details>
-      </div>
-    </div>
+      </section>
+      <p class="foot">Prototype built on the Swiss AI Week 2026 challenge data. Every client shown is a held-out validation client.
+        Not a production tool and not an official UBS product.</p>
+    </main>
   </div>
 </div>
 
@@ -160,6 +272,12 @@ const F = D.features, G = D.groups, T = D.dates.length;
 const sigm = v => 1 / (1 + Math.exp(-v));
 const dateLbl = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const OUT = ['on time', 'late', 'missed'];
+const sign = v => (v < 0 ? '−' : '+');
+const sgn1 = v => Math.abs(v) < 0.05 ? '0.0' : sign(v) + Math.abs(v).toFixed(1);
+const K = Math.max(1, T - 1 - D.i4);   // snapshots in the 4-week comparison window
+const SHORT = { timing: 'Timing', history: 'History', amount: 'Amounts & funding', portfolio: 'Subscriptions', change: 'Recent change', activity: 'Account activity' };
+const SHORT_N = { amount: 'Amounts', change: 'Recent', activity: 'Activity' };
+const short = (g, narrow) => (narrow && SHORT_N[g.key]) || SHORT[g.key] || g.name;
 
 // ---- model (same math as dashboard_sample/risk_model.py) --------------
 function contrib(x) {   // clip to train range, impute median, standardise, times beta
@@ -179,6 +297,36 @@ function series(c) {
 const PF = D.portfolio;
 const byId = new Map(PF.map(p => [p.id, p]));
 
+// ---- diverging colour for group contributions (OKLab steps, validated) --
+const RAMP = { up: ['#E4C0B3', '#DB9D8E', '#D17868', '#C35243', '#B42019'], down: ['#C0C8CF', '#98ACC2', '#7191B5', '#4A76A8', '#1F5A99'], mid: '#E9E4DA' };
+let HCAP = 1;   // 95th percentile of |group contribution| over all clients and dates: one scale for everyone
+(function () {
+  const v = [];
+  for (const id in D.clients) series(D.clients[id]).forEach(s => s.g.forEach(x => v.push(Math.abs(x))));
+  v.sort((a, b) => a - b);
+  HCAP = Math.max(0.2, v[Math.floor(0.95 * (v.length - 1))] || 1);
+})();
+function heatColor(v) {
+  const a = Math.abs(v) / HCAP;
+  if (a < 0.1) return RAMP.mid;
+  return (v > 0 ? RAMP.up : RAMP.down)[Math.min(5, Math.ceil(a * 5)) - 1];
+}
+const RAMP_LEGEND = `<span class="ramp"><span>lowers risk</span>${[...RAMP.down].reverse().map(c => `<i style="background:${c}"></i>`).join('')}<i style="background:${RAMP.mid}"></i>${RAMP.up.map(c => `<i style="background:${c}"></i>`).join('')}<span>raises risk</span></span>`;
+
+// ---- driver chart view: stacked bars (default) or grid ---------------------
+let view = 'bars';
+try { if (localStorage.getItem('drvView') === 'grid') view = 'grid'; } catch (e) {}
+function setView(v) {
+  view = v;
+  try { localStorage.setItem('drvView', v); } catch (e) {}
+  $('view').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === v); b.setAttribute('aria-pressed', b.dataset.v === v); });
+  if (S) { renderDrv(); renderDetail(); }
+}
+$('view').querySelectorAll('button').forEach(b => {
+  b.onclick = () => setView(b.dataset.v);
+  b.classList.toggle('on', b.dataset.v === view); b.setAttribute('aria-pressed', b.dataset.v === view);
+});
+
 // ---- portfolio ---------------------------------------------------------
 let sortKey = 'now', selId = null, selT = T - 1, open = new Set();
 function renderPortfolio() {
@@ -186,18 +334,20 @@ function renderPortfolio() {
   const rows = PF.filter(p => !q || p.id.includes(q))
     .sort((a, b) => sortKey === 'now' ? b.now - a.now : b.delta - a.delta);
   $('pf').innerHTML = rows.map(p => {
-    const d = p.delta, arrow = Math.abs(d) < 1 ? '→' : d > 0 ? '↑' : '↓';
-    return `<div class="pf-row ${p.id === selId ? 'on' : ''}" data-id="${p.id}"><span>${p.id}</span>
-      <span><span class="risk-pill">${Math.round(p.now)}</span><div class="mini"><i style="width:${Math.min(100, p.now)}%"></i></div></span>
-      <span class="${d > 1 ? 'up' : d < -1 ? 'down' : 'muted'}">${arrow} ${Math.abs(d).toFixed(0)}</span>
-      <span class="muted small">${esc(p.next)} ${Math.round(100 * p.next_p)}%</span></div>`;
-  }).join('');
+    const d = p.delta, dc = d > 1 ? 'up' : d < -1 ? 'dn' : 'muted';
+    return `<button type="button" class="pf-row ${p.id === selId ? 'on' : ''}" data-id="${p.id}" aria-pressed="${p.id === selId}">
+      <span>${p.id}</span><span class="r">${Math.round(p.now)}</span><span class="bar"><i style="width:${Math.min(100, p.now)}%"></i></span>
+      <span class="d ${dc}">${Math.abs(d) < 1 ? '0' : sign(d) + Math.abs(d).toFixed(0)}</span>
+      <span class="nx muted">${esc(p.next)} ${Math.round(100 * p.next_p)}%</span></button>`;
+  }).join('') || '<p class="pf-note">No client ID matches this search.</p>';
   $('pf').querySelectorAll('.pf-row').forEach(r => r.onclick = () => select(r.dataset.id));
-  $('pf-note').textContent = `${rows.length} of ${PF.length} clients (held-out validation clients). "4 wk" = change over the last 4 weeks.`;
+  $('pf-note').textContent = `${rows.length.toLocaleString('en')} of ${PF.length.toLocaleString('en')} held-out clients. "4 wk" = change in the risk index over the last 4 weeks; "likely next" = the category model's forecast.`;
 }
 $('q').oninput = renderPortfolio;
 $('sort').querySelectorAll('button').forEach(b => b.onclick = () => {
-  sortKey = b.dataset.k; $('sort').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderPortfolio();
+  sortKey = b.dataset.k;
+  $('sort').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+  renderPortfolio();
 });
 
 // ---- client ------------------------------------------------------------
@@ -209,16 +359,23 @@ function select(id, t) {
 }
 function renderClient() {
   const p = byId.get(selId), now = S[T - 1], prev = S[D.i4];
-  const d = now.index - prev.index;
+  const d = now.index - prev.index, avgNow = D.avg_index[T - 1];
   $('head').innerHTML = `
-    <div><div class="kpi"><span class="lbl">${esc(selId)} · risk index today</span></div>
-      <div class="big">${Math.round(now.index)}<small> / 100</small></div></div>
-    <div class="kpi"><div class="lbl">4-week change</div><div class="val ${d > 1 ? 'up' : ''}">${d > 0 ? '↑ +' : d < 0 ? '↓ −' : '→ '}${Math.abs(d).toFixed(0)}</div></div>
-    <div class="kpi"><div class="lbl">P(late)</div><div class="val">${Math.round(100 * now.late)}%</div></div>
-    <div class="kpi"><div class="lbl">P(missed)</div><div class="val" style="color:var(--red)">${Math.round(100 * now.missed)}%</div></div>
-    <div class="kpi"><div class="lbl">Next payment (category model)</div><div><span class="chip dark">${esc(p.next)} · ${Math.round(100 * p.next_p)}%</span></div></div>`;
+    <div>
+      <h2 class="cid">Client ${esc(selId)} <span>· risk index today</span></h2>
+      <div class="big">${Math.round(now.index)}<small>/ 100</small></div>
+      <div class="scale" aria-hidden="true"><div class="avg" style="left:${Math.min(100, avgNow)}%"></div><div class="you" style="left:${Math.min(100, now.index)}%"></div></div>
+      <div class="scale-lbl" aria-hidden="true"><span>0 on time</span><span>50 late</span><span>100 missed</span></div>
+      <div class="scale-key"><span><i></i>this client</span><span><i class="ka"></i>portfolio average (${Math.round(avgNow)})</span></div>
+    </div>
+    <dl class="kpis">
+      <div><dt>4-week change</dt><dd class="${d > 1 ? 'up' : ''}">${Math.abs(d) < 0.5 ? '0' : sign(d) + Math.abs(d).toFixed(0)}</dd></div>
+      <div><dt>Chance late</dt><dd>${Math.round(100 * now.late)}%</dd></div>
+      <div><dt>Chance missed</dt><dd class="${now.missed >= 0.5 ? 'up' : ''}">${Math.round(100 * now.missed)}%</dd></div>
+      <div><dt title="Forecast of the main model: which subscription family this client pays next">Likely next payment</dt><dd><span class="chip">${esc(p.next)} · ${Math.round(100 * p.next_p)}%</span></dd></div>
+    </dl>`;
   $('story').innerHTML = storyText();
-  renderLine(); renderStack(); renderDetail();
+  renderLine(); renderDrv(); renderDetail();
 }
 function storyText() {
   const now = S[T - 1], prev = S[D.i4];
@@ -227,99 +384,197 @@ function storyText() {
   const d = now.index - prev.index;
   const move = Math.abs(d) < 1 ? 'stable over the last 4 weeks' : `${d > 0 ? 'up' : 'down'} ${Math.abs(d).toFixed(0)} points in 4 weeks`;
   const main = dg[0];
-  const why = Math.abs(d) >= 1 ? `, mainly because of <b>${esc(main.g.name.toLowerCase())}</b> (${main.v > 0 ? 'more' : 'less'} risk)` : '';
-  return `Risk is <b>${lvl}</b> compared with the portfolio (${ordinal(byId.get(selId).pct)} percentile) and ${move}${why}.`;
+  const why = Math.abs(d) >= 1 ? `, mainly through <b>${esc(short(main.g).toLowerCase())}</b> (${main.v > 0 ? 'pushing risk up' : 'pulling risk down'})` : '';
+  const n = C.due[T - 1].length;
+  const due = n ? ` ${n} recurring payment${n === 1 ? ' is' : 's are'} due in the next 30 days.` : ' No recurring payment is due in the next 30 days.';
+  return `Risk is <b>${lvl}</b> for this portfolio (${ordinal(byId.get(selId).pct)} percentile) and ${move}${why}.${due}`;
 }
 const ordinal = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 
-// ---- charts ------------------------------------------------------------
-const PAD = { l: 36, r: 12 };
-function xScale(W) { const t0 = Date.parse(D.dates[0]), t1 = Date.parse(D.dates[T - 1]); return i => PAD.l + (W - PAD.l - PAD.r) * (Date.parse(D.dates[i]) - t0) / (t1 - t0); }
-function width(el) { return Math.max(320, el.clientWidth || 700); }
+// ---- charts: shared x axis, hover and selection ---------------------------
+function pads(W) { return W < 560 ? { l: 76, r: 34 } : { l: 126, r: 60 }; }
+function xScale(W) { const P = pads(W), t0 = Date.parse(D.dates[0]), t1 = Date.parse(D.dates[T - 1]); return i => P.l + (W - P.l - P.r) * (Date.parse(D.dates[i]) - t0) / (t1 - t0); }
+function width(el) { return Math.max(300, el.clientWidth || 700); }
+function dateTicks(W, X, y) {
+  const P = pads(W), px = (W - P.l - P.r) / (T - 1), step = Math.max(1, Math.ceil(52 / px)); let g = '';
+  for (let i = T - 1; i >= 0; i -= step) g += `<text x="${X(i).toFixed(1)}" y="${y}" text-anchor="middle">${dateLbl(D.dates[i])}</text>`;
+  return g;
+}
+function setSel(i) { selT = Math.max(0, Math.min(T - 1, i)); open = new Set(); renderLine(); renderDrv(); renderDetail(); }
+function setHover(i, src) {
+  ['line', 'drv'].forEach(id => {
+    const el = $(id), h = el.querySelector('.hov'), tip = el.querySelector('.tip');
+    if (!h || !tip) return;
+    if (i === null) { h.setAttribute('visibility', 'hidden'); tip.hidden = true; return; }
+    const X = xScale(width(el)), x = X(i);
+    if (h.tagName === 'rect') h.setAttribute('x', x - (+h.dataset.w) / 2); else { h.setAttribute('x1', x); h.setAttribute('x2', x); }
+    h.setAttribute('visibility', 'visible');
+    if (id !== src) { tip.hidden = true; return; }
+    tip.innerHTML = id === 'line' ? lineTip(i) : drvTip(i); tip.hidden = false;
+    const w = tip.offsetWidth; let left = x + 14; if (left + w > el.clientWidth) left = x - 14 - w;
+    tip.style.left = Math.max(0, left) + 'px';
+  });
+}
+function bindChart(id) {
+  const el = $(id);
+  el.querySelectorAll('[data-t]').forEach(r => {
+    r.onmouseenter = () => setHover(+r.dataset.t, id);
+    r.onclick = () => { setSel(+r.dataset.t); setHover(+r.dataset.t, id); };
+  });
+  el.onmouseleave = () => setHover(null);
+  el.onblur = () => setHover(null);
+  el.onkeydown = e => {
+    const k = { ArrowLeft: selT - 1, ArrowRight: selT + 1, Home: 0, End: T - 1 }[e.key];
+    if (k === undefined) return;
+    e.preventDefault(); setSel(k); $(id).focus(); setHover(selT, id);
+  };
+}
+function dueCounts(t) {
+  const c = [0, 0, 0, 0]; C.due[t].forEach(d => c[d[4] === null ? 3 : d[4]]++); return c;
+}
+function lineTip(i) {
+  const c = dueCounts(i), n = C.due[i].length;
+  const parts = ['on time', 'late', 'missed', 'not yet known'].map((l, k) => c[k] ? `${c[k]} ${l}` : '').filter(Boolean).join(', ');
+  return `<b>${dateLbl(D.dates[i])}</b><br>Risk index <b>${S[i].index.toFixed(0)}</b> <span class="m">· portfolio ${D.avg_index[i].toFixed(0)}</span><br>` +
+    (n ? `${n} payment${n === 1 ? '' : 's'} due: ${parts}` : '<span class="m">No payment due in the next 30 days</span>');
+}
+function drvTip(i) {
+  const rows = G.map((g, gi) => ({ g, v: S[i].g[gi] })).sort((a, b) => b.v - a.v);
+  const key = r => view === 'bars' ? `<i class="k" style="background:${r.g.color}"></i>` : `<i style="background:${heatColor(r.v)}"></i>`;
+  const val = v => `<b>${sign(v)}${Math.abs(v).toFixed(2)}</b>`;
+  return `<b>${dateLbl(D.dates[i])}</b> <span class="m">vs an average client</span>` +
+    rows.map(r => `<div class="tr">${key(r)}<span>${esc(short(r.g))}</span><span class="n">${val(r.v)}</span></div>`).join('') +
+    `<div class="tr" style="border-top:1px solid #3A3834;padding-top:4px"><i style="background:var(--card);border-radius:50%;width:8px;height:8px"></i><span>Net effect</span><span class="n">${val(S[i].eta)}</span></div>` +
+    `<div class="m" style="margin-top:4px">log-odds; + raises risk</div>`;
+}
 
 function renderLine() {
-  const el = $('line'), W = width(el), H = 230, top = 10, bot = 190, X = xScale(W);
+  const el = $('line'), W = width(el), H = 238, top = 12, bot = 172, oy = bot + 18, X = xScale(W), P = pads(W);
   const vals = S.map(s => s.index), avg = D.avg_index;
   const ymax = Math.min(100, Math.max(40, Math.ceil((Math.max(...vals, ...avg) + 5) / 10) * 10));
   const Y = v => bot - (bot - top) * v / ymax;
   let g = '';
   for (let v = 0; v <= ymax; v += ymax <= 50 ? 10 : 20)
-    g += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#DAD5CA"/><text x="${PAD.l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+    g += `<line class="grid-l" x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${P.l - 10}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  g += `<text class="gut" x="0" y="${oy + 9}">${W < 560 ? 'Due' : 'Payments due'}</text>`;
+  g += `<line class="sel-l" x1="${X(selT)}" x2="${X(selT)}" y1="${top}" y2="${oy + 12}"/>`;
+  g += `<line class="hov hov-l" x1="0" x2="0" y1="${top}" y2="${oy + 12}" visibility="hidden"/>`;
   const path = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('');
-  g += `<path d="${path(avg)}" fill="none" stroke="#A7A39B" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-  g += `<path d="${path(vals)}" fill="none" stroke="#111111" stroke-width="2.2"/>`;
-  g += `<line x1="${X(selT)}" x2="${X(selT)}" y1="${top}" y2="${bot}" stroke="#E3302C" stroke-width="1" stroke-dasharray="2 2"/>`;
+  g += `<path class="avg-l" d="${path(avg)}"/><path class="cli-l" d="${path(vals)}"/>`;
+  const qs = Math.min(10, (W - P.l - P.r) / (T - 1) - 3);
   vals.forEach((v, i) => {
-    g += `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === selT ? 6 : 3.5}" fill="${i === selT ? '#E3302C' : '#111111'}" stroke="#FAF8F3" stroke-width="1.5"/>`;
-    const o = C.outcome[i], fill = o === null ? 'none' : ['#DAD5CA', '#F4B9B7', '#E3302C'][o];
-    if (C.n_due[i] > 0) g += `<rect x="${X(i) - 5}" y="${bot + 10}" width="10" height="10" fill="${fill}" stroke="${o === null ? '#A7A39B' : 'none'}"><title>${dateLbl(D.dates[i])}: ${o === null ? 'not yet known' : OUT[o]}</title></rect>`;
-    g += `<rect x="${X(i) - 9}" y="${top}" width="18" height="${bot - top + 22}" fill="transparent" data-t="${i}" style="cursor:pointer"><title>${dateLbl(D.dates[i])}: ${v.toFixed(0)}</title></rect>`;
+    g += `<circle class="pt${i === selT ? ' on' : ''}" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === selT ? 6 : 3.5}"/>`;
+    if (C.n_due[i] > 0) { const o = C.outcome[i]; g += `<rect class="${o === null ? 'oc-n' : 'oc-' + o}" x="${(X(i) - qs / 2).toFixed(1)}" y="${oy}" width="${qs.toFixed(1)}" height="10" rx="2"/>`; }
   });
-  D.dates.forEach((d, i) => { if (i % 2 === 0 || i === T - 1) g += `<text x="${X(i)}" y="${H - 2}" text-anchor="middle">${dateLbl(d)}</text>`; });
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
-  el.querySelectorAll('[data-t]').forEach(r => r.onclick = () => { selT = +r.dataset.t; open = new Set(); renderLine(); renderStack(); renderDetail(); });
+  // direct end labels, nudged apart when they collide
+  let yc = Y(vals[T - 1]) + 4, ya = Y(avg[T - 1]) + 4;
+  if (Math.abs(yc - ya) < 14) { const m = (yc + ya) / 2, s = yc <= ya ? -7 : 7; yc = m + s; ya = m - s; }
+  g += `<text class="endlbl" x="${X(T - 1) + 12}" y="${yc}">${vals[T - 1].toFixed(0)}</text><text x="${X(T - 1) + 12}" y="${ya}">${W < 560 ? '' : 'avg '}${avg[T - 1].toFixed(0)}</text>`;
+  g += dateTicks(W, X, H - 4);
+  const step = (W - P.l - P.r) / (T - 1);
+  vals.forEach((_, i) => { g += `<rect class="hit" data-t="${i}" x="${X(i) - step / 2}" y="0" width="${step}" height="${oy + 14}"/>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" aria-hidden="true">${g}</svg><div class="tip" hidden></div>`;
+  bindChart('line');
 }
 
-function renderStack() {
-  const el = $('stack'), W = width(el), H = 190, top = 8, bot = 168, X = xScale(W);
-  const mid = (top + bot) / 2;
+
+function renderBars() {
+  const el = $('drv'), W = width(el), X = xScale(W), P = pads(W), H = 214, top = 8, bot = 188, mid = (top + bot) / 2;
   const ext = Math.max(0.5, ...S.map(s => Math.max(s.g.filter(v => v > 0).reduce((a, b) => a + b, 0), -s.g.filter(v => v < 0).reduce((a, b) => a + b, 0))));
   const Y = v => mid - (bot - top) / 2 * v / ext;
-  const bw = Math.max(6, Math.min(22, (W - PAD.l - PAD.r) / T * 0.6));
-  let g = `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${mid}" y2="${mid}" stroke="#111111"/>
-    <text x="${PAD.l - 6}" y="${top + 8}" text-anchor="end">more</text><text x="${PAD.l - 6}" y="${bot}" text-anchor="end">less</text>`;
-  S.forEach((s, i) => {
+  const step = (W - P.l - P.r) / (T - 1), bw = Math.max(4, Math.min(22, step * 0.62));
+  let g = `<text x="${P.l - 12}" y="${top + 8}" text-anchor="end">raises risk</text><text x="${P.l - 12}" y="${bot}" text-anchor="end">lowers risk</text>`;
+  g += `<rect class="hov hovbox" data-w="${bw + 8}" x="0" y="${top - 2}" width="${bw + 8}" height="${bot - top + 4}" rx="3" visibility="hidden"/>`;
+  S.forEach((s, i) => {   // positive groups stack up from the line, negative ones down, always in group order
     let up = 0, dn = 0;
     s.g.forEach((v, gi) => {
+      if (Math.abs(v) < 1e-9) return;
       const a = v >= 0 ? up : dn, b = a + v;
       if (v >= 0) up = b; else dn = b;
-      g += `<rect x="${X(i) - bw / 2}" y="${Math.min(Y(a), Y(b))}" width="${bw}" height="${Math.abs(Y(a) - Y(b))}" fill="${G[gi].color}" opacity="${i === selT ? 1 : 0.8}"><title>${esc(G[gi].name)}: ${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} log-odds</title></rect>`;
+      g += `<rect class="seg-s" data-g="${gi}"${bw < 9 ? ' style="stroke-width:1"' : ''} x="${(X(i) - bw / 2).toFixed(1)}" y="${Math.min(Y(a), Y(b)).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.abs(Y(a) - Y(b)).toFixed(1)}" fill="${G[gi].color}"/>`;
     });
-    if (i === selT) g += `<rect x="${X(i) - bw / 2 - 3}" y="${top - 2}" width="${bw + 6}" height="${bot - top + 4}" fill="none" stroke="#E3302C" stroke-width="1.5"/>`;
-    g += `<rect x="${X(i) - bw / 2 - 3}" y="${top}" width="${bw + 6}" height="${bot - top}" fill="transparent" data-t="${i}" style="cursor:pointer"/>`;
   });
-  D.dates.forEach((d, i) => { if (i % 2 === 0 || i === T - 1) g += `<text x="${X(i)}" y="${H - 2}" text-anchor="middle">${dateLbl(d)}</text>`; });
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
-  el.querySelectorAll('[data-t]').forEach(r => r.onclick = () => { selT = +r.dataset.t; open = new Set(); renderLine(); renderStack(); renderDetail(); });
-  $('stack-legend').innerHTML = G.map(g => `<span><i style="background:${g.color}"></i>${esc(g.name)}</span>`).join('');
+  g += `<line class="base-l" x1="${P.l - 4}" x2="${W - P.r + 4}" y1="${mid}" y2="${mid}"/>`;
+  S.forEach((s, i) => { g += `<circle class="net-pt" cx="${X(i).toFixed(1)}" cy="${Y(s.eta).toFixed(1)}" r="${bw < 9 ? 2.5 : 3.5}"/>`; });
+  g += `<rect class="selbox" x="${X(selT) - bw / 2 - 4}" y="${top - 2}" width="${bw + 8}" height="${bot - top + 4}" rx="3"/>`;
+  g += dateTicks(W, X, H - 4);
+  S.forEach((_, i) => { g += `<rect class="hit" data-t="${i}" x="${X(i) - step / 2}" y="0" width="${step}" height="${bot + 4}"/>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" aria-hidden="true">${g}</svg><div class="tip" hidden></div>`;
+  bindChart('drv');
 }
 
-// ---- detail: why did it move? -------------------------------------------
+function renderDrv() {
+  const bars = view === 'bars';
+  $('drv-sub').textContent = bars ? 'Contribution of each group of client behaviour, compared with an average client. Above the line pushes risk up; the dot is the net effect.'
+    : 'Each row is one group of client behaviour, compared with an average client.';
+  $('drv-legend').innerHTML = bars ? G.map((g, gi) => `<button type="button" class="lg" data-g="${gi}"><i style="background:${g.color}"></i>${esc(short(g))}</button>`).join('') +
+    '<span><i class="net"></i>net effect</span>' : RAMP_LEGEND;
+  if (bars) renderBars(); else renderHeat();
+  if (bars) $('drv-legend').querySelectorAll('.lg').forEach(b => {   // hover or focus a legend entry to isolate its group
+    const svg = () => $('drv').querySelector('svg');
+    const on = () => { svg().classList.add('hl'); svg().querySelectorAll('.seg-s').forEach(r => r.classList.toggle('on', r.dataset.g === b.dataset.g)); };
+    const off = () => svg().classList.remove('hl');
+    b.onmouseenter = on; b.onfocus = on; b.onmouseleave = off; b.onblur = off;
+  });
+}
+
+function renderHeat() {
+  const el = $('drv'), W = width(el), X = xScale(W), P = pads(W), rh = 26, top = 2, gh = G.length * rh, H = top + gh + 22;
+  const step = (W - P.l - P.r) / (T - 1), cw = Math.max(3, step - 2);
+  let g = '';
+  G.forEach((grp, gi) => {
+    const y = top + gi * rh;
+    g += `<text class="rowlbl" x="${(P.l - cw / 2 - 8).toFixed(1)}" y="${y + rh / 2 + 4}" text-anchor="end">${esc(short(grp, W < 560))}</text>`;
+    S.forEach((s, i) => { g += `<rect x="${(X(i) - cw / 2).toFixed(1)}" y="${y + 1}" width="${cw.toFixed(1)}" height="${rh - 2}" rx="2" fill="${heatColor(s.g[gi])}"/>`; });
+  });
+  g += `<rect class="hov hovbox" data-w="${cw + 4}" x="0" y="${top - 1}" width="${cw + 4}" height="${gh}" rx="3" visibility="hidden"/>`;
+  g += `<rect class="selbox" x="${X(selT) - cw / 2 - 2}" y="${top - 1}" width="${cw + 4}" height="${gh}" rx="3"/>`;
+  g += dateTicks(W, X, H - 4);
+  S.forEach((_, i) => { g += `<rect class="hit" data-t="${i}" x="${X(i) - step / 2}" y="0" width="${step}" height="${top + gh}"/>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" aria-hidden="true">${g}</svg><div class="tip" hidden></div>`;
+  bindChart('drv');
+}
+
+// ---- detail: what moved the score? ----------------------------------------
 const fmt = (v, f) => v === null ? 'missing' : f.binary ? (v >= 0.5 ? 'yes' : 'no') : Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2);
+const bar = (v, mm, col) => { const w = 50 * Math.min(1, Math.abs(v) / mm); return `<div class="dbar"><div class="mid"></div><div class="b ${v >= 0 ? 'pos' : 'neg'}" style="${v >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%${col ? `;background:${col}` : ''}"></div></div>`; };
 function renderDetail() {
-  const t = selT, t0 = Math.max(0, t - 1), s = S[t], s0 = S[t0];
+  const t = selT, t0 = Math.max(0, t - K), s = S[t], s0 = S[t0];
   const dIdx = s.index - s0.index, dEta = s.eta - s0.eta;
   // Exact split: risk points per unit of log-odds between the two snapshots (secant slope), times each group's change.
   const slope = Math.abs(dEta) > 1e-9 ? dIdx / dEta : (probs(s.eta + 1e-4).index - s.index) / 1e-4;
-  $('d-title').innerHTML = t === 0 ? `Risk on ${dateLbl(D.dates[t])}: ${s.index.toFixed(0)}` :
-    `${dateLbl(D.dates[t])}: risk ${s.index.toFixed(0)} <span style="color:${dIdx > 0 ? 'var(--red)' : 'var(--black)'}">(${dIdx >= 0 ? '+' : '−'}${Math.abs(dIdx).toFixed(1)} since ${dateLbl(D.dates[t0])})</span>`;
+  $('d-sub').innerHTML = t === 0 ? `${dateLbl(D.dates[0])} is the first snapshot, so there is nothing to compare with yet. Pick a later date.` :
+    `${dateLbl(D.dates[t0])} to ${dateLbl(D.dates[t])}: risk ${s0.index.toFixed(0)} → <b>${s.index.toFixed(0)}</b> <span class="${dIdx > 0.05 ? 'up' : ''}">(${sgn1(dIdx)})</span>`;
   const rows = G.map((g, gi) => ({ gi, g, v: slope * (s.g[gi] - s0.g[gi]) })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   const m = Math.max(0.5, ...rows.map(r => Math.abs(r.v)));
-  const bar = (v, mm) => { const w = 50 * Math.min(1, Math.abs(v) / mm); return `<div class="dbar"><div class="mid"></div><div class="b" style="background:${v >= 0 ? 'var(--red)' : 'var(--black)'};${v >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>`; };
-  $('drivers').innerHTML = t === 0 ? '<p class="muted">First snapshot: nothing to compare with yet. Pick a later point.</p>' : rows.map(r => {
+  $('drivers').innerHTML = t === 0 ? '' : rows.map(r => {
     const feats = F.map((f, j) => ({ f, j, v: slope * (s.k[j] - s0.k[j]) })).filter(o => o.f.group === r.gi && Math.abs(o.v) >= 0.05)
       .sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
     const isOpen = open.has(r.gi);
     const fm = Math.max(0.5, ...feats.map(o => Math.abs(o.v)));
-    return `<div class="drv"><div class="drv-row" data-g="${r.gi}"><span class="caret">${feats.length ? (isOpen ? '▾' : '▸') : ''}</span>
-      <span><i style="display:inline-block;width:9px;height:9px;background:${r.g.color};margin-right:6px"></i>${esc(r.g.name)}</span>${bar(r.v, m)}
-      <span class="num" style="color:${r.v > 0.05 ? 'var(--red)' : 'var(--black)'}">${r.v >= 0 ? '+' : '−'}${Math.abs(r.v).toFixed(1)}</span></div>
-      ${isOpen ? `<div class="feats">${feats.map(o => `<div class="feat"><span></span><span>${esc(o.f.name)}<br><span class="fv">${fmt(C.x[t0][o.j], o.f)} → ${fmt(C.x[t][o.j], o.f)}</span></span>${bar(o.v, fm)}<span class="num" style="font-weight:400">${o.v >= 0 ? '+' : '−'}${Math.abs(o.v).toFixed(1)}</span></div>`).join('') || '<div class="feat small muted"><span></span><span>no single feature moved more than 0.05 points</span></div>'}</div>` : ''}</div>`;
-  }).join('') + (t === 0 ? '' : `<div class="drv-row" style="cursor:default;font-weight:700"><span></span><span>Total change</span><span></span><span class="num">${dIdx >= 0 ? '+' : '−'}${Math.abs(dIdx).toFixed(1)}</span></div>`);
-  $('drivers').querySelectorAll('[data-g]').forEach(r => r.onclick = () => { const g = +r.dataset.g; open.has(g) ? open.delete(g) : open.add(g); renderDetail(); });
+    return `<div class="drv"><button type="button" class="drv-row" data-g="${r.gi}" ${feats.length ? `aria-expanded="${isOpen}"` : 'disabled'}>
+      <span class="caret${isOpen ? ' open' : ''}">${feats.length ? '▸' : ''}</span><span>${view === 'bars' ? `<i class="sw" style="background:${r.g.color}"></i>` : ''}${esc(short(r.g))}</span>${bar(r.v, m, view === 'bars' ? r.g.color : null)}
+      <span class="num ${r.v > 0.05 ? 'up' : ''}">${sgn1(r.v)}</span></button>
+      ${isOpen ? `<div class="feats">${feats.map(o => `<div class="feat"><span></span><span>${esc(o.f.name)}<br><span class="fv">${fmt(C.x[t0][o.j], o.f)} → ${fmt(C.x[t][o.j], o.f)}</span></span>${bar(o.v, fm, view === 'bars' ? r.g.color : null)}<span class="num" style="font-weight:400">${sgn1(o.v)}</span></div>`).join('')}</div>` : ''}</div>`;
+  }).join('') + `<div class="total"><span></span><span>Total change</span><span></span><span class="num ${dIdx > 0.05 ? 'up' : ''}">${sgn1(dIdx)}</span></div>`;
+  $('drivers').querySelectorAll('[data-g]:not([disabled])').forEach(r => r.onclick = () => {
+    const g = +r.dataset.g; open.has(g) ? open.delete(g) : open.add(g); renderDetail();
+    const b = $('drivers').querySelector(`[data-g="${g}"]`); if (b) b.focus();
+  });
 
   const due = C.due[t];
-  $('due').innerHTML = !due.length ? `<p class="muted">No recurring payment due between ${dateLbl(D.dates[t])} and 30 days later.</p>` :
-    `<table><thead><tr><th>Payment</th><th>Amount</th><th>Expected</th><th>Arrived</th><th>Outcome</th></tr></thead><tbody>` +
-    due.map(([cat, amt, exp, arr, o]) => `<tr><td>${esc(cat || 'unlabelled')}</td><td>${amt.toFixed(2)}</td><td>${dateLbl(exp)}</td><td>${arr ? dateLbl(arr) : '—'}</td>
-      <td>${o === null ? '<span class="oc ocn">not yet known</span>' : `<span class="oc oc${o}">${OUT[o]}</span>`}</td></tr>`).join('') + '</tbody></table>' +
-    `<p class="small muted">Model at this date: P(late) ${Math.round(100 * s.late)}%, P(missed) ${Math.round(100 * s.missed)}%.</p>`;
+  $('due-sub').textContent = `In the 30 days after ${dateLbl(D.dates[t])}. Model at this date: ${Math.round(100 * s.late)}% chance late, ${Math.round(100 * s.missed)}% chance missed.`;
+  $('due').innerHTML = !due.length ? `<p class="muted">No recurring payment was due in this window.</p>` :
+    `<table><thead><tr><th>Payment</th><th class="r">Amount</th><th>Expected</th><th>Arrived</th><th>Outcome</th></tr></thead><tbody>` +
+    due.map(([cat, amt, exp, arr, o]) => `<tr><td>${esc(cat || 'unlabelled')}</td><td class="r">${amt.toFixed(2)}</td><td>${dateLbl(exp)}</td><td>${arr ? dateLbl(arr) : '—'}</td>
+      <td>${o === null ? '<span class="oc ocn">not yet known</span>' : `<span class="oc oc${o}">${OUT[o]}</span>`}</td></tr>`).join('') + '</tbody></table>';
 }
 
 // ---- method ------------------------------------------------------------
 $('method').innerHTML = D.method;
 
-window.addEventListener('resize', () => { if (S) { renderLine(); renderStack(); } });
+let rz;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S) { renderLine(); renderDrv(); } }, 80); });
 const h = decodeURIComponent(location.hash.slice(1)).toUpperCase();
 select(D.clients[h] ? h : D.default_client);
 </script>

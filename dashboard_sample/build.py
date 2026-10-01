@@ -25,13 +25,15 @@ SNAPSHOTS = [s for s in ALL_SNAPSHOTS if s != "2025-12-31"]
 TEMPLATE_PATH = "dashboard_sample/template.html"
 OUT_PATH = "dashboard_sample/index.html"
 
+# Colours: categorical slots 1-6 in fixed order, validated colour-blind safe for adjacent stack
+# segments on the card surface (no red: red is reserved for risk in the dashboard).
 GROUPS = [
-    ("timing", "Timing regularity", "#E3302C"),
-    ("history", "History & frequency", "#111111"),
-    ("amount", "Amounts & funding", "#6B675F"),
-    ("portfolio", "Subscription portfolio", "#A7A39B"),
-    ("change", "Recent change", "#F0A19E"),
-    ("activity", "Account activity", "#CFC8BA"),
+    ("timing", "Timing regularity", "#2A78D6"),
+    ("history", "History & frequency", "#EB6834"),
+    ("amount", "Amounts & funding", "#1BAF7A"),
+    ("portfolio", "Subscription portfolio", "#EDA100"),
+    ("change", "Recent change", "#E87BA4"),
+    ("activity", "Account activity", "#008300"),
 ]
 GROUP_PREFIXES = {
     "timing": ("over_days_", "is_live_", "first_due_", "late_cycles_", "bill_day_"),
