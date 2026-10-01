@@ -19,8 +19,7 @@ labels ("levels": classes, clusters, segments; see *Use it on similar data*).
 Built at the Swiss AI Weeks hackathon in Zurich, UBS challenge, by Basil,
 Salim Doumbia, Shipra and me (Tim Reinicke). George Touloupas (UBS) provided
 the challenge and the data; the first commits here (task, dataset, license)
-are his. The team's shared work is in [salim1999/ubs-2026](https://github.com/salim1999/ubs-2026).
-Shipra wrote the first submission code (transaction tagging, stream detection,
+are his. Shipra wrote the first submission code (transaction tagging, stream detection,
 first features), which this repository starts from.
 
 My part is everything after that commit: the experiment loop and log, the
