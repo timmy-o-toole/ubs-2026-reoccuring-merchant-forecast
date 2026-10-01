@@ -11,7 +11,7 @@ upcoming recurring payment, and why?**
 - A ranked list of all clients, so the riskiest and the fastest-rising stand out.
 - For each change in the score, the behaviour behind it (e.g. timing, payment history, subscriptions).
 
-**[Open the live dashboard](https://timmy-o-toole.github.io/ubs-2026-recurring-merchant-forecast/dashboard_sample/)**
+**[Open the live dashboard](https://timmy-o-toole.github.io/ubs-2026-reoccuring-merchant-forecast/dashboard_sample/)**
 (the same `index.html`, served by GitHub Pages). It shows the 1,000 validation clients; none of
 them is used to fit any model.
 

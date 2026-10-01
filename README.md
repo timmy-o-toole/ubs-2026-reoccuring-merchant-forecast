@@ -1,6 +1,6 @@
 # Next Recurring Merchant Forecast (UBS, Swiss AI Week 2026)
 
-**Live dashboard:** [client risk monitor](https://timmy-o-toole.github.io/ubs-2026-recurring-merchant-forecast/dashboard_sample/),
+**Live dashboard:** [client risk monitor](https://timmy-o-toole.github.io/ubs-2026-reoccuring-merchant-forecast/dashboard_sample/),
 a prototype built on this model (see *Further application*).
 
 **Task:** for each bank client, predict which subscription family recurs next
@@ -213,12 +213,12 @@ not in 5-fold cross-validation on train (EBM 0.505 vs. SparseLevels 0.510) and
 is 30-80x slower. Other models use default settings; differences below
 ~0.01-0.02 are within noise. The reference models are one-liners, commented out in
 `build_model` in `pipeline/evaluate.py`; the full benchmark script is in the
-[git history](https://github.com/timmy-o-toole/ubs-2026-recurring-merchant-forecast/blob/12bb1a7/extra_info/benchmark_models.py).
+[git history](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/12bb1a7/extra_info/benchmark_models.py).
 
 ## Further application: client risk monitor
 
 `dashboard_sample/` asks a second question with the same 103 features: will a
 client's next recurring payments arrive on time, late, or not at all? One sparse
 L1 model gives each client a risk index (0-100) over time, and shows which
-features moved it. [Open the live dashboard](https://timmy-o-toole.github.io/ubs-2026-recurring-merchant-forecast/dashboard_sample/);
+features moved it. [Open the live dashboard](https://timmy-o-toole.github.io/ubs-2026-reoccuring-merchant-forecast/dashboard_sample/);
 details in its [README](dashboard_sample/README.md).
