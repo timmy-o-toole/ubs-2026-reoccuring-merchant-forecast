@@ -1,6 +1,6 @@
 """Payment risk index model: continuation-ratio (sequential) logit on the risk snapshots.
 
-    python -m dashboard_sample.risk_model      # fit on train+test clients, report on valid clients
+    python -m dashboard_sample.risk_model      # fit on train- and test-split clients, report on valid clients
 
 Outcome per client x snapshot (dashboard_sample/risk.py): 0 on time, 1 late, 2 missed.
 Continuation-ratio logit (Agresti, Categorical Data Analysis, sec. 8.3), shared betas:
@@ -13,8 +13,9 @@ global L2 benchmark are both plain sklearn fits. No class weights: probabilities
 
 Risk index (0-100) = 100 x expected severity on the equally spaced 0/1/2 scale
                     = 50 * P(late) + 100 * P(missed),   monotone in eta.
-Labels are derived from the transactions, so test clients (no category labels needed) are
-used for training too; valid clients are held out for every number reported here.
+Outcomes are read from the transactions, not from the challenge labels, so the test-split
+clients' transactions can be used for fitting too (the hidden test labels are never needed);
+valid clients are held out for every number reported here.
 """
 
 from __future__ import annotations

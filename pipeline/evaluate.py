@@ -16,7 +16,7 @@ import sys
 import pandas as pd
 from sklearn.metrics import confusion_matrix, f1_score
 
-from code import SparseLevels
+from sparselevels import SparseLevels
 from pipeline.data import LABEL_COL, LABELS, labelled_features, training_set
 
 LOG_PATH = "extra_info/experiments.csv"

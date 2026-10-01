@@ -25,7 +25,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from code.features_category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
+from sparselevels.features_category_map import NON_SUBSCRIPTION_PHRASES, NON_SUBSCRIPTION_TYPES, classify
 
 MIN_GAP_DAYS = 20
 MAX_GAP_DAYS = 45

@@ -21,14 +21,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from code.features_category_map import TARGET_CATEGORIES
-from code.features_recurrence import detect_streams, load_transactions, tag_transactions
+from sparselevels.features_category_map import TARGET_CATEGORIES
+from sparselevels.features_recurrence import detect_streams, load_transactions, tag_transactions
 
 RECENT_WINDOW_DAYS = 90
 # A stream counts as live if its next charge is overdue by at most this many days.
 LIVE_MAX_OVER_DAYS = 5
 # Story-feature blocks (19 columns): lateness (8), portfolio (3), refund (8).
-STORY_BLOCKS = ("late_bro", "portfolio_bro", "refund_bro")
+STORY_BLOCKS = ("due_now", "portfolio_change", "refunds")
 
 # Feature sets (see select_features). "full" = all 132 features we build.
 # "lean" = the 103 features of the model: 21 redundant columns removed (same
@@ -206,23 +206,23 @@ def _billing_day_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Ti
 def _story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
     """Story features: three small, explainable blocks.
 
-    late_bro:      "Whatever is due now comes next." late_cycles_<fam> =
-                   over_days / mean gap, capped to [-1, 3]; 3 = no stream
-                   (not the median: missing means "no stream", the opposite
-                   of "due now"). late_min_cycles = the client's most-due family.
-    portfolio_bro: "Clients who paid for many things and stopped tend to end
-                   with nothing new." Families with >= 2 tagged charges ever,
-                   in the last 90 days, and dropped (>= 2 charges 6-12 months
-                   ago, none in the last 90 days). >= 2 filters decoys.
-    refund_bro:    "A refund proves an active customer, not one leaving."
-                   refund_<fam>_90d = tagged refund in the last 90 days.
+    due_now:          "Whatever is due now comes next." late_cycles_<fam> =
+                      over_days / mean gap, capped to [-1, 3]; 3 = no stream
+                      (not the median: missing means "no stream", the opposite
+                      of "due now"). late_min_cycles = the client's most-due family.
+    portfolio_change: "Clients who paid for many things and stopped tend to end
+                      with nothing new." Families with >= 2 tagged charges ever,
+                      in the last 90 days, and dropped (>= 2 charges 6-12 months
+                      ago, none in the last 90 days). >= 2 filters decoys.
+    refunds:          "A refund proves an active customer, not one leaving."
+                      refund_<fam>_90d = tagged refund in the last 90 days.
     All inputs are before the cutoff, so nothing leaks the answer.
     """
     clients = pd.Index(df["client_id"].unique(), name="client_id")
     out = pd.DataFrame(index=clients)
     age = (cutoff - df["timestamp"]).dt.days
 
-    if "late_bro" in STORY_BLOCKS:
+    if "due_now" in STORY_BLOCKS:
         active = streams[streams["is_recurring"] & streams["category"].notna()].copy()
         active["over"] = (cutoff - active["last_date"]).dt.days - active["mean_gap_days"]
         fam = active.groupby(["client_id", "category"]).agg(over=("over", "min"), gap=("mean_gap_days", "mean"))
@@ -231,7 +231,7 @@ def _story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestam
         out = out.join(late)
         out["late_min_cycles"] = late.min(axis=1)
 
-    if "portfolio_bro" in STORY_BLOCKS:
+    if "portfolio_change" in STORY_BLOCKS:
         tagged = df[(df["direction"] == "out") & df["category"].notna()]
         tagged_age = age.loc[tagged.index]
 
@@ -247,7 +247,7 @@ def _story_features(df: pd.DataFrame, streams: pd.DataFrame, cutoff: pd.Timestam
         dropped = pd.Series([c for c, _ in old - recent], dtype=object).value_counts()
         out["port_dropped_families"] = dropped.reindex(clients).fillna(0)
 
-    if "refund_bro" in STORY_BLOCKS:
+    if "refunds" in STORY_BLOCKS:
         refunds = df[(df["type"] == "refund") & df["category"].notna() & (age < 90)]
         flags = refunds.groupby(["client_id", "category"]).size().unstack()
         flags = flags.reindex(index=clients, columns=TARGET_CATEGORIES).notna().astype(int)

@@ -11,7 +11,7 @@ import argparse
 
 import pandas as pd
 
-from code import build_features
+from sparselevels import build_features
 from pipeline.data import CUTOFF, LABEL_COL, LABELS, labelled_features, read_transactions, training_set
 from pipeline.evaluate import build_model, macro_f1
 

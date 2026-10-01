@@ -1,5 +1,8 @@
 # Next Recurring Merchant Forecast (UBS, Swiss AI Week 2026)
 
+**Live dashboard:** [client risk monitor](https://timmy-o-toole.github.io/ubs-2026-recurring-merchant-forecast/dashboard_sample/),
+a prototype built on this model (see *Further application*).
+
 **Task:** for each bank client, predict which subscription family recurs next
 in the 90 days after `2026-01-01`:
 `cloud, gym, insurance, mobile, music, software, streaming` or `none`.
@@ -10,6 +13,20 @@ Challenge, data and full task: [Swiss-ai-Weeks/ubs-2026](https://github.com/Swis
 forecast explainable. We call the model **SparseLevels**: one sparse (L1,
 lasso) logistic regression per label. The model code works for any set of
 labels ("levels": classes, clusters, segments; see *Use it on similar data*).
+
+## Team and my part
+
+Built at the Swiss AI Weeks hackathon in Zurich, UBS challenge, by Basil,
+Salim Doumbia, Shipra and me (Tim Reinicke). George Touloupas (UBS) provided
+the challenge and the data; the first commits here (task, dataset, license)
+are his. The team's shared work is in [salim1999/ubs-2026](https://github.com/salim1999/ubs-2026).
+Shipra wrote the first submission code (transaction tagging, stream detection,
+first features), which this repository starts from.
+
+My part is everything after that commit: the experiment loop and log, the
+feature blocks, the SparseLevels model and its evaluation, and later the
+client risk monitor. I used Claude Code as a coding assistant; the commits it
+helped with carry a `Co-Authored-By: Claude` line.
 
 ## Method at a glance
 
@@ -94,8 +111,17 @@ age of that subscription and whether it still runs ([all coefficients](extra_inf
 
 ## Result
 
-**Macro-F1 0.504** on the validation set (1,000 clients the model has never seen).
-Training data: only the 2,000 labelled train clients.
+| Model | Macro-F1 (valid) |
+|---|---|
+| Majority class (always `none`) | 0.057 |
+| Rule: the live subscription due first, else `none` | 0.484 |
+| **SparseLevels (final)** | **0.504** |
+
+Training data: only the 2,000 labelled train clients. No model was fitted on
+the 1,000 validation clients, but I used them to choose features and model
+(about 30 logged experiments), so 0.504 is somewhat optimistic. As a check
+that does not reuse the validation set, 5-fold cross-validation on the train
+clients gives 0.510.
 
 ## Run our pipeline
 
@@ -112,19 +138,19 @@ Expected: `model macro-F1 (valid) = 0.5036` with scikit-learn 1.0.2 (newer versi
 ## Repository layout
 
 ```
-code/       features and model, generic:
+sparselevels/  features and model, generic:
   features_category_map.py   transaction -> subscription family tag
   features_recurrence.py     recurring streams per client
   features_build.py          raw transactions (a table) -> one feature row per client
   model.py                   SparseLevels: one sparse (L1, lasso) logistic regression per level
-pipeline/   our task: data paths, labels, training set, evaluation, submission
-data/       challenge data (dataset.zip)
-extra_info/ coefficients per label
-dashboard_sample/  further application: client risk monitor, built on code/ and pipeline/
+pipeline/      our task: data paths, labels, training set, evaluation, submission
+data/          challenge data (dataset.zip)
+extra_info/    coefficients per label
+dashboard_sample/  further application: client risk monitor, built on sparselevels/ and pipeline/
 ```
 
-`code/` takes tables and knows nothing about our data paths; only
-`pipeline/` does. So you can reuse `code/` for a similar task.
+`sparselevels/` takes tables and knows nothing about our data paths; only
+`pipeline/` does. So you can reuse `sparselevels/` for a similar task.
 
 ## Use it on similar data
 
@@ -134,7 +160,7 @@ cutoff); `y` is the label per client.
 
 ```python
 import pandas as pd
-from code import build_features, select_features, fit_sparse_levels
+from sparselevels import build_features, select_features, fit_sparse_levels
 
 tx = pd.read_json("my_transactions.jsonl", lines=True, dtype={"mcc": str})
 F = build_features(tx, cutoff_date="2026-01-01")          # one row per client
@@ -143,14 +169,14 @@ model = fit_sparse_levels(X, y)                           # y: label per client 
 model.predict(X)
 ```
 
-The subscription tagging in `code/features_category_map.py` (keywords, MCC codes, non-subscription phrases,
+The subscription tagging in `sparselevels/features_category_map.py` (keywords, MCC codes, non-subscription phrases,
 the 7 families in `TARGET_CATEGORIES`) is tuned to this challenge's merchant descriptions; adapt it for your data.
 
 **Any feature table -> any levels.** The model alone works on any table and
 any levels (class labels, cluster ids, customer segments):
 
 ```python
-from code import fit_sparse_levels
+from sparselevels import fit_sparse_levels
 
 model = fit_sparse_levels(X, y)            # X: feature table, y: level per row
 model.predict(X_new)                       # predicted level per row
@@ -162,7 +188,7 @@ model.explain(X_new.iloc[[0]])             # why this row got its prediction
 Options: `Cs=(...)` candidate values of C, the inverse penalty strength (smaller C = sparser; one value = fixed C),
 `levels=[...]` fixed order of the levels, `penalty="elasticnet"` with `l1_ratio`
 as an optional alternative to L1 (not used in our final model).
-`python code/model.py` runs a small demo. The file is self-contained
+`python sparselevels/model.py` runs a small demo. The file is self-contained
 (numpy, pandas, scikit-learn), so you can also copy it on its own.
 
 ## Benchmark: other model types
@@ -188,12 +214,12 @@ not in 5-fold cross-validation on train (EBM 0.505 vs. SparseLevels 0.510) and
 is 30-80x slower. Other models use default settings; differences below
 ~0.01-0.02 are within noise. The reference models are one-liners, commented out in
 `build_model` in `pipeline/evaluate.py`; the full benchmark script is in the
-[git history](https://github.com/timmy-o-toole/ubs-2026-reoccuring-merchant-forecast/blob/10279ee/extra_info/benchmark_models.py).
+[git history](https://github.com/timmy-o-toole/ubs-2026-recurring-merchant-forecast/blob/12bb1a7/extra_info/benchmark_models.py).
 
 ## Further application: client risk monitor
 
 `dashboard_sample/` asks a second question with the same 103 features: will a
 client's next recurring payments arrive on time, late, or not at all? One sparse
 L1 model gives each client a risk index (0-100) over time, and shows which
-features moved it. Open `dashboard_sample/index.html`; details in its
-[README](dashboard_sample/README.md).
+features moved it. [Open the live dashboard](https://timmy-o-toole.github.io/ubs-2026-recurring-merchant-forecast/dashboard_sample/);
+details in its [README](dashboard_sample/README.md).

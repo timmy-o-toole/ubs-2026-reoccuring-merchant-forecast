@@ -1,1 +1,1 @@
-"""Our task on top of code/: data paths, labels, evaluation, submission."""
+"""Our task on top of sparselevels/: data paths, labels, evaluation, submission."""

@@ -2,10 +2,11 @@
 
     python -m dashboard_sample.build
 
-Fits the risk model (dashboard_sample/risk_model.py: sparse L1 continuation-ratio logit, trained on
-train + test clients) and shows the 1,000 held-out validation clients. Also fits the final
-category model (SparseLevels from pipeline.evaluate, train clients only; valid not used) for the
-"next payment" column. Writes a self-contained dashboard_sample/index.html.
+Fits the risk model (dashboard_sample/risk_model.py: sparse L1 continuation-ratio logit, fitted on
+the transactions of the train-split and test-split clients; no challenge labels needed) and shows
+the 1,000 held-out validation clients. Also fits the final category model (SparseLevels from
+pipeline.evaluate, train clients only; valid not used) for the "next payment" column. Writes a
+self-contained dashboard_sample/index.html.
 """
 
 import json
@@ -14,7 +15,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from code import TARGET_CATEGORIES
+from sparselevels import TARGET_CATEGORIES
 from pipeline.data import labelled_features, training_set
 from pipeline.evaluate import build_model
 from dashboard_sample.risk import SNAPSHOTS as ALL_SNAPSHOTS, build_snapshots
@@ -151,9 +152,10 @@ so one unusual charge cannot push the score to an extreme.</li>
 <li><b>Risk index</b> = 100 &times; expected severity on the 0 / 1 / 2 scale = 50 &times; P(late) + 100 &times; P(missed).</li>
 <li><b>Drivers</b>: each feature adds (standardised value &times; beta) to &eta;; features are summed into six groups. The change in
 risk points between two snapshots is split over the groups in proportion to their change in &eta;, so the groups add up exactly.</li>
-<li><b>Honest numbers</b>: trained on {info['n_fit']:,} labelled snapshots of {info['n_fit_clients']:,} train and test clients (outcomes come
-from the transactions, no labels needed); everything below and every client shown is from the {info['n_eval_clients']:,} held-out
-validation clients ({info['n_eval']:,} labelled snapshots).</li>
+<li><b>Honest numbers</b>: fitted on {info['n_fit']:,} snapshots of {info['n_fit_clients']:,} clients from the challenge's train and test splits,
+using only their transactions: the on-time/late/missed outcomes are read from the transactions, and no challenge
+labels are used. Everything below and every client shown is from the {info['n_eval_clients']:,} validation clients
+({info['n_eval']:,} snapshots), which no model was fitted on.</li>
 </ul>
 <table class="evaltbl"><thead><tr><th>Model (held-out clients)</th><th>Log-loss (lower = better)</th><th>AUC late or missed</th><th>AUC missed</th></tr></thead>
 <tbody>{tbl}</tbody></table>

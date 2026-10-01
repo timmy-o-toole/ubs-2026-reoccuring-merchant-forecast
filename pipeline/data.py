@@ -1,6 +1,6 @@
 """Our task's data: file paths, labels, cutoff and the training set.
 
-This is the only place that knows where files live. code/ turns a table
+This is the only place that knows where files live. sparselevels/ turns a table
 of transactions into features and fits the model on a feature table; it
 reads no files by itself.
 
@@ -12,13 +12,13 @@ from __future__ import annotations
 
 import pandas as pd
 
-from code import TARGET_CATEGORIES, build_features, load_transactions, select_features
+from sparselevels import TARGET_CATEGORIES, build_features, load_transactions, select_features
 
 DATA_DIR = "data"
 CUTOFF = "2026-01-01"
 LABEL_COL = "target_next_recurring_merchant"
 LABELS = TARGET_CATEGORIES + ["none"]
-FEATURE_SET = "lean"  # 103 features (see code.select_features)
+FEATURE_SET = "lean"  # 103 features (see sparselevels.select_features)
 
 
 def read_transactions(split: str) -> pd.DataFrame:
